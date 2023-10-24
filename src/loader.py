@@ -14,8 +14,8 @@ def load_from_directory(dir, return_list=True):
                 data = np.load(file_path)
                 file_list.append(data)
             except:
-                print(f"Error loading {filename} file: {str(e)}")
-    print("Load complete. All files loaded succesfully.")
+                print(f"Error loading {flename} file: {str(e)}")
+    print("Load complete. All files loadied succesfully.")
     if return_list:
         return tensors_list
     else:
@@ -29,7 +29,7 @@ def load_tensors(dir):
     return
 
 def main():
-    
+
     return
 
 

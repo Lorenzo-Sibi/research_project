@@ -13,7 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "compression-maste
 #sys.path.append('./../compression-master/models')  # Aggiunge il percorso alla lista dei percorsi di importazione
 import tfci
 
-TENSOR_NAME = "hyperprior_entropy_model_conditional_entropy_model_3_add_0"
+TENSOR_NAMES = "hyperprior/entropy_model/conditional_entropy_model_3/add:0"
 
 def load_and_process_image(image_path):
     img = tf.io.read_file(image_path)
@@ -44,10 +44,10 @@ def main():
 
     for image in images_batch:
         image_path = os.path.join(args.input_path, image)
-        output_file = os.path.join(args.output_path, image, ".npz")
+        output_file = os.path.join(args.output_path, image)
         #img = load_and_process_image(image_path)
 
-        tfci.dump_tensor(args.model, TENSOR_NAME, image_path, output_file)
+        tfci.dump_tensor(args.model, TENSOR_NAMES, image_path, output_file)
         # Esegui lo script tfci.py
         #parametri_script = ["python", args.percorso_script_tfci, metodo_dump, args.nome_tensore, percorso_immagine]
         #subprocess.run(parametri_script)

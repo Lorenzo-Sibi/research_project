@@ -56,7 +56,7 @@ def main():
 
     dump_tensor(resized_images_path, args.output_path, n_images)
     print(f"DONE. {n_images} Images Dumped.\nDumped images directory: {args.output_path}")
-    os.rmdir(input)
+    os.rmdir(resized_images_path)
 
 def parsing_args():
     parser = argparse.ArgumentParser(description="Script per campionare immagini casuali e eseguire tfci.py su di esse.")

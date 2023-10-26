@@ -34,9 +34,7 @@ def dump_tensor(input, output_path, n_images):
     return
 
 
-def main():
-    args = parsing_args()
-
+def main(args):
     if not os.path.exists(args.input_path):
         print("images path not avaiable or doesn't exist")
         return
@@ -70,4 +68,5 @@ def parsing_args():
     return parser.parse_args()
 
 if __name__ == "__main__":
-    main()
+    args = parsing_args()
+    main(args)

@@ -32,11 +32,9 @@ def load_and_process_images(image_files):
     # Ridimensiona tutte le immagini alla risoluzione media
     resized_images = []
     for image_file in image_files:
-        image = tf.image.decode_image(tf.io.read_file(image_file))
+        image = tf.image.decode_image(tf.io.read_file(image_file), channels=3)
+        image = tf.image.convert_image_dtype(image, tf.float32)  # Normalizza l'immagine
         resized_image = tf.image.resize(image, average_resolution)
-        resized_image = tf.io.read_file(image_files)
-        resized_image = tf.image.decode_image(resized_image, channels=3)  # Decodifica l'immagine
-        resized_image = tf.image.convert_image_dtype(resized_image, tf.float32)  # Normalizza l'immagine
         resized_images.append(resized_image)
     return resized_images
 

@@ -232,14 +232,15 @@ def list_tensors(model):
     print(f"{name} (dtype={dtype}, shape={shape})")
 
 
-def dump_tensor(model, tensors, input_file, output_file):
+def dump_tensor(model, tensors, input_image, output_file, use_path=False, input_file=None):
   """Dumps the given tensors of a model in .npz format."""
   if not output_file:
     output_file = input_file + ".npz"
   # Note: if receiver-side tensors are requested, this is no problem, as the
   # metagraph contains the union of the sender and receiver graphs.
   sender = instantiate_model_signature(model, "sender", outputs=tensors)
-  input_image = read_png(input_file)
+  if use_path and input_file is not None:
+    input_image = read_png(input_file)
   # Replace special characters in tensor names with underscores.
   table = str.maketrans(r"^./-:", r"_____")
   tensors = [t.translate(table) for t in tensors]

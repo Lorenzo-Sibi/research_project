@@ -17,25 +17,26 @@ TENSOR_NAMES =  ["hyperprior/entropy_model/conditional_entropy_model_3/add:0"]
 MODEL_NAME = "hific-lo"
 N_IMAGES = 10
 
-def load_and_process_images(image_files):
-    # Inizializza una lista per memorizzare le risoluzioni delle immagini
+# FInd the correct resolution for a list of images path
+def find_resolution(images_batch):
     resolutions = []
-
     # Calcola le risoluzioni di tutte le immagini
-    for image_file in image_files:
-        image = tf.image.decode_image(tf.io.read_file(image_file))
+    for image_path in images_batch:
+        image = tf.image.decode_image(tf.io.read_file(image_path))
         resolutions.append(tf.shape(image)[:-1])
 
     # Calcola la risoluzione media tra tutte le immagini
     average_resolution = tf.reduce_min(tf.stack(resolutions, axis=0), axis=0)
+    return average_resolution
 
+def load_and_process_image(images_path, resolution):
     # Ridimensiona tutte le immagini alla risoluzione media
     resized_images = []
-    for image_file in image_files:
+    for image_file in images_path:
         image = tf.image.decode_image(tf.io.read_file(image_file), channels=3)
         image = tf.image.convert_image_dtype(image, tf.float32)  # Normalizza l'immagine
-        resized_image = tf.image.resize(image, average_resolution)
-        resized_images.append(resized_image)
+        resized_image = tf.image.resize(image, resolution)
+        resized_images.append((resized_image, os.path.splitext(image_file)[-1]))
     return resized_images
 
 def main():
@@ -55,19 +56,20 @@ def main():
     random.seed(42)
 
     # Ottieni un elenco di tutte le immagini nella cartella
-    images_set = [file for file in os.listdir(args.input_path) if file.endswith((".jpg", ".png"))]
+    images_set = [os.path.join(args.input_path, file) for file in os.listdir(args.input_path) if file.endswith((".jpg", ".png"))]
     n_images = args.batch_size
     # Campiona casualmente 100 immagini
     images_batch = random.sample(images_set, n_images)
-    images_batch = load_and_process_images(images_batch)
 
+    resolution = find_resolution(images_batch)
+    resized_images = load_and_process_image(images_batch, resolution)
     n = 0
-    for image in images_batch:
-        image_path = os.path.join(args.input_path, image)
-        output_file = os.path.join(args.output_path, os.path.splitext(image)[0] + ".npz") 
+
+    for image, image_file_name in resized_images:
+        output_file = os.path.join(args.output_path, image_file_name + ".npz") 
         #img = load_and_process_image(image_path)
 
-        tfci.dump_tensor(MODEL_NAME, TENSOR_NAMES, image_path, output_file)
+        tfci.dump_tensor(MODEL_NAME, TENSOR_NAMES, image, output_file)
         # Esegui lo script tfci.py
         #parametri_script = ["python", args.percorso_script_tfci, metodo_dump, args.nome_tensore, percorso_immagine]
         #subprocess.run(parametri_script)

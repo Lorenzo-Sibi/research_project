@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import random
 import subprocess
@@ -56,7 +57,7 @@ def main():
 
     dump_tensor(resized_images_path, args.output_path, n_images)
     print(f"DONE. {n_images} Images Dumped.\nDumped images directory: {args.output_path}")
-    os.rmdir(resized_images_path)
+    shutil.rmtree(resized_images_path, ignore_errors=True)
 
 def parsing_args():
     parser = argparse.ArgumentParser(description="Script per campionare immagini casuali e eseguire tfci.py su di esse.")

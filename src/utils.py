@@ -14,6 +14,7 @@ def find_resolution(images_batch):
 
 # Ridimensiona tutte le immagini alla risoluzione specificata
 def load_and_process_image(images_path, output_path, resolution):
+    print("Resizing images...")
     for image_file in images_path:
         image = tf.image.decode_image(tf.io.read_file(image_file), channels=3)
         resized_image = tf.image.resize(image, resolution)

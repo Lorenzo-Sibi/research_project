@@ -17,11 +17,28 @@ TENSOR_NAMES =  ["hyperprior/entropy_model/conditional_entropy_model_3/add:0"]
 MODEL_NAME = "hific-lo"
 N_IMAGES = 10
 
-def load_and_process_image(image_path):
-    img = tf.io.read_file(image_path)
-    img = tf.image.decode_image(img, channels=3)  # Decodifica l'immagine
-    img = tf.image.convert_image_dtype(img, tf.float32)  # Normalizza l'immagine
-    return img
+def load_and_process_images(image_files):
+    # Inizializza una lista per memorizzare le risoluzioni delle immagini
+    resolutions = []
+
+    # Calcola le risoluzioni di tutte le immagini
+    for image_file in image_files:
+        image = tf.image.decode_image(tf.io.read_file(image_file))
+        resolutions.append(tf.shape(image)[:-1])
+
+    # Calcola la risoluzione media tra tutte le immagini
+    average_resolution = tf.reduce_min(tf.stack(resolutions, axis=0), axis=0)
+
+    # Ridimensiona tutte le immagini alla risoluzione media
+    resized_images = []
+    for image_file in image_files:
+        image = tf.image.decode_image(tf.io.read_file(image_file))
+        resized_image = tf.image.resize(image, average_resolution)
+        resized_image = tf.io.read_file(image_files)
+        resized_image = tf.image.decode_image(resized_image, channels=3)  # Decodifica l'immagine
+        resized_image = tf.image.convert_image_dtype(resized_image, tf.float32)  # Normalizza l'immagine
+        resized_images.append(resized_image)
+    return resized_images
 
 def main():
     parser = argparse.ArgumentParser(description="Script per campionare immagini casuali e eseguire tfci.py su di esse.")
@@ -44,6 +61,8 @@ def main():
     n_images = args.batch_size
     # Campiona casualmente 100 immagini
     images_batch = random.sample(images_set, n_images)
+    images_batch = load_and_process_images(images_batch)
+
     n = 0
     for image in images_batch:
         image_path = os.path.join(args.input_path, image)

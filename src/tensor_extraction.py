@@ -5,6 +5,7 @@ import subprocess
 import argparse
 import tensorflow as tf
 import numpy as np
+import PIL
 
 import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "compression-master/models"))

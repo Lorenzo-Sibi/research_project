@@ -14,7 +14,6 @@ import tfci
 
 TENSOR_NAMES =  ["hyperprior/entropy_model/conditional_entropy_model_3/add:0"]
 MODEL_NAME = "hific-lo"
-N_IMAGES = 10
 
 RESIZED_DESTINATION = "/mnt/ssd-data/sibi/resized_images"
 
@@ -63,7 +62,7 @@ def parsing_args():
     parser.add_argument("output_path", type=str, help="Il percorso della cartella delle contente i file .npz di ogni immagine")
     parser.add_argument("tensor-name", type=str, help="The name of the specific tensor to extract")
     parser.add_argument("model", type=str, help="the name of the specific model (es 'hific-lo')")
-    parser.add_argument("--batch-size", nargs='?', default=N_IMAGES, type=int)
+    parser.add_argument("--batch-size", nargs='?', default=0, type=int)
     
     return parser.parse_args()
 

@@ -86,7 +86,7 @@ def main():
     
     parser.add_argument("input_path", help="The inputh path where are loceted all the tnesors")
     parser.add_argument("output_path", default="./")
-    parser.add_argument("-n", "--n", default=1, type=int ,help="Tensors batch size (default: 10)")
+    parser.add_argument("-n", "--n", default=0, type=int ,help="Tensors batch size (default: all files)")
 
     args = parser.parse_args()
 

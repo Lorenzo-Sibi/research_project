@@ -10,8 +10,10 @@ random.seed(42)
 # Load an entire tensors batch from "dir" (.npz or .npy files) and return a list of narrays
 def load_from_directory(dir, batch_size, return_list=True):
     files = [file for file in os.listdir(dir) if file.endswith((".npz", ".npy"))]
-    files_batch = random.sample(files, batch_size)
-
+    if batch_size is None or batch_size == 0:
+        files_batch = files
+    else:
+        files_batch = random.sample(files, batch_size)
     tensors_list = []
     for filename in files_batch:
         file_path = os.path.join(dir, filename)
@@ -56,7 +58,7 @@ def main():
     
     parser.add_argument("input_path", help="The inputh path where are loceted all the tensors")
     parser.add_argument("output_path", help="")
-    parser.add_argument("-n", "--n", default=1, type=int ,help="Import size (default: 1)")
+    parser.add_argument("-n", "--n", default=0, type=int ,help="Import size (default: all the files)")
 
     args = parser.parse_args()
     

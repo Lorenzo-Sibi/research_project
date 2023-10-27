@@ -52,31 +52,31 @@ def plot_statistics(tensor_list):
     fig, axs = plt.subplots(1, 5, figsize=(20, 4))
 
     axs[0].hist(std_list, bins=20, color='blue', alpha=0.7)
-    axs[0].set_title('Deviazione Standard')
-    axs[0].set_xlabel('Valore')
-    axs[0].set_ylabel('Frequenza')
+    axs[0].set_title('Standard Deviation')
+    axs[0].set_xlabel('Value')
+    axs[0].set_ylabel('Frequency')
 
     axs[1].hist(var_list, bins=20, color='green', alpha=0.7)
-    axs[1].set_title('Varianza')
-    axs[1].set_xlabel('Valore')
-    axs[1].set_ylabel('Frequenza')
+    axs[1].set_title('Variance')
+    axs[1].set_xlabel('Value')
+    axs[1].set_ylabel('Frequency')
 
     axs[2].hist(mean_list, bins=20, color='orange', alpha=0.7)
-    axs[2].set_title('Media')
-    axs[2].set_xlabel('Valore')
-    axs[2].set_ylabel('Frequenza')
+    axs[2].set_title('Mean')
+    axs[2].set_xlabel('Value')
+    axs[2].set_ylabel('Frequency')
 
     axs[3].hist(min_list, bins=20, color='red', alpha=0.7)
-    axs[3].set_title('Minimo')
-    axs[3].set_xlabel('Valore')
-    axs[3].set_ylabel('Frequenza')
+    axs[3].set_title('Min.')
+    axs[3].set_xlabel('Value')
+    axs[3].set_ylabel('Frequency')
 
     axs[4].hist(max_list, bins=20, color='purple', alpha=0.7)
-    axs[4].set_title('Massimo')
-    axs[4].set_xlabel('Valore')
-    axs[4].set_ylabel('Frequenza')
+    axs[4].set_title('Max')
+    axs[4].set_xlabel('Value')
+    axs[4].set_ylabel('Frequency')
 
-    plt.show()
+    plt.savefig('statistics_test.png')
 
 def main():
     parser = argparse.ArgumentParser(

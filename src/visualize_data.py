@@ -10,6 +10,8 @@ import loader
 # Creazione di un tensore di esempio (sostituisci con il tuo tensore effettivo)
 # Il tensore dovrebbe avere la forma (n_campioni, n_dimensioni)
 
+OPERATIONS = ['statistics', 'statistics-all', 'TSNE']
+
 def my_TSNE(tensors):
 
     # Riduci la dimensionalità dei dati con t-SNE
@@ -30,18 +32,18 @@ def my_TSNE(tensors):
     # Mostra il grafico
     plt.show()
 
-def plot_statistics(tensor_list):
+def statistics(tensor_list):
     # Inizializza le liste per raccogliere le statistiche
     std_list = []
     var_list = []
     mean_list = []
     min_list = []
     max_list = []
-
+    
     # Calcola le statistiche per ciascun tensore nella lista
     for tensor in tensor_list:
         if not isinstance(tensor, np.ndarray):
-            tensor = tensor.numpy()  # Converte il tensore in un array NumPy
+            tensor = tensor.numpy()
         std_list.append(np.std(tensor))
         var_list.append(np.var(tensor))
         mean_list.append(np.mean(tensor))
@@ -53,32 +55,85 @@ def plot_statistics(tensor_list):
 
     axs[0].hist(std_list, bins=20, color='blue', alpha=0.7)
     axs[0].set_title('Standard Deviation')
-    axs[0].set_xlabel('Value')
-    axs[0].set_ylabel('Frequency')
+    axs[:3].set_xlabel('Value')
+    axs[:3].set_ylabel('Frequency')
 
     axs[1].hist(var_list, bins=20, color='green', alpha=0.7)
     axs[1].set_title('Variance')
-    axs[1].set_xlabel('Value')
-    axs[1].set_ylabel('Frequency')
 
     axs[2].hist(mean_list, bins=20, color='orange', alpha=0.7)
     axs[2].set_title('Mean')
-    axs[2].set_xlabel('Value')
-    axs[2].set_ylabel('Frequency')
 
     axs[3].hist(min_list, bins=20, color='red', alpha=0.7)
     axs[3].set_title('Min.')
-    axs[3].set_xlabel('Value')
-    axs[3].set_ylabel('Frequency')
 
     axs[4].hist(max_list, bins=20, color='purple', alpha=0.7)
     axs[4].set_title('Max')
-    axs[4].set_xlabel('Value')
-    axs[4].set_ylabel('Frequency')
 
     plt.savefig('statistics_test.png')
 
-def main():
+def statistics_axis(tensor_list, axis=0):
+    measures = ["Standard Deviation", "Variance", "Mean", "Min", "Max"]
+    # Inizializza le liste per raccogliere le statistiche
+    statistics = {
+        "standard deviation": [],
+        "variance": [],
+        "mean": [],
+        "min": [],
+        "max": []
+    }
+
+    # Calcola le statistiche per ciascun tensore nella lista
+
+    for measure in measures:
+        func = None
+        if measure == measures[0]:
+            func = np.std
+        elif measure == measures[1]:
+            func = np.var
+        elif measure == measures[2]:
+            func = np.mean
+        elif measure == measures[3]:
+            func = np.min
+        elif measure == measures[4]:
+            func = np.max
+
+        axis_stats = []
+        for tensor in tensor_list:
+            if not isinstance(tensor, np.ndarray):
+                tensor = tensor.numpy()
+            axis_stat = func(tensor, axis=axis) # Return an array of ndim elements (1 element if axis == 0)
+            axis_stats.append(axis_stat)
+
+        # Compute the mean of specified measure along 0 axis (tensors)
+        avg_stat = np.mean(axis_stats, axis=0)
+        statistics[measure.lower()] = avg_stat
+    # Crea un set di grafici, uno per ciascuna misura statistica
+    fig, axs = plt.subplots(len(measures), 1, figsize=(12, 20))
+
+    for i, measure in enumerate(measures):
+        axs[i].hist(statistics[measure.lower()].flatten(), bins=40, color='C0', alpha=0.7)
+        axs[i].set_title(f"Distribution of '{measure}' between {len(tensor_list)} tensors on axis {axis}")
+        axs[i].set_xlabel(f'Value {measure}')
+        axs[i].set_ylabel('Frequency')
+
+    plt.tight_layout()
+    plt.savefig('statistics_test_axis'+ str(axis) + '.png')
+
+def main(args):
+
+    np_tensors_list = loader.load_from_directory(args.input_path, args.n)
+
+    operation = args.op
+    if operation == OPERATIONS[0]:
+        statistics(np_tensors_list)
+    elif operation == OPERATIONS[1]:
+        for i  in range(0, 4):
+            statistics_axis(np_tensors_list, axis=i)
+    elif operation == OPERATIONS[2]:
+        my_TSNE(np_tensors_list)
+
+def parse_args():
     parser = argparse.ArgumentParser(
         prog='Visualize Data',
         description='Compute data analysis on a tensors batch (file must end with .npz)',
@@ -86,12 +141,11 @@ def main():
     
     parser.add_argument("input_path", help="The inputh path where are loceted all the tnesors")
     parser.add_argument("output_path", default="./")
+    parser.add_argument("-op", required=True, choices=OPERATIONS)
     parser.add_argument("-n", "--n", default=0, type=int ,help="Tensors batch size (default: all files)")
 
-    args = parser.parse_args()
-
-    np_tensors_list = loader.load_from_directory(args.input_path, args.n)
-    my_TSNE(np_tensors_list[0])
+    return parser.parse_args()
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    main(args)

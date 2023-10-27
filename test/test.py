@@ -55,7 +55,7 @@ def main(args):
     print(args_list)
     
     np_tensors = loader.load_from_directory(args_list[0], int(args_list[1]))
-    visualize_data.plot_statistics(np_tensors)
+    visualize_data.plot_statistics(np_tensors, axis=4)
     return
 
 if __name__ == "__main__":

@@ -30,12 +30,12 @@ def load_from_directory(dir, batch_size, return_list=True):
             return
         
 
-    print(f"Load complete. {batch_size} files loaded succesfully")
+    print(f"Load complete. {len(files_batch)} files loaded succesfully.")
 
     if return_list:
         return tensors_list
     else:
-        print("No-List Returned")
+        print("No-List Returned.")
 
 # Convert a list of narray into a list of tf tensors
 def convert_to_tf(tensors:list):

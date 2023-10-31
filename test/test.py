@@ -52,10 +52,12 @@ def parse_args():
 
 def main(args):
     args_list = args.list # input_path, batch_size
-    print(args_list)
-    
-    np_tensors = loader.load_from_directory(args_list[0], int(args_list[1]))
-    visualize_data.plot_statistics(np_tensors, axis=4)
+
+    tf_tensors_list = loader.load_tensors(args_list[0], n=int(args_list[1]))
+    tf_tensors_list = utils.reshape_all_3D(tf_tensors_list)
+    test_tensor = tf_tensors_list[0]
+    # visualize_data.plot_tensor_fft_spectrum(test_tensor)
+    visualize_data.plot_slices_average(test_tensor)
     return
 
 if __name__ == "__main__":

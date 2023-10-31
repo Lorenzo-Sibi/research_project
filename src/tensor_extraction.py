@@ -35,9 +35,11 @@ def extract_tensors(input_path, output_path, tensor_names:list, model_name, batc
         print("images path not avaiable or doesn't exist")
         return
     # List of all images inside input_path directory (COMPLETE PATH)
+    print("Loading all the .npz/.npy files...")
     images_set = [os.path.join(input_path, file) 
                   for file in os.listdir(input_path) 
                   if file.endswith((".jpg", ".png"))]
+    print("Loading completed.")
     n_images = batch_size
     if n_images == 0 or n_images is None:
         images_batch = images_set
@@ -66,9 +68,9 @@ def main(args):
 
 
 def parsing_args():
-    parser = argparse.ArgumentParser(description="Script per campionare immagini casuali e eseguire tfci.py su di esse.")
-    parser.add_argument("input_path", type=str, help="Il percorso della cartella contentente le immagini")
-    parser.add_argument("output_path", type=str, help="Il percorso della cartella delle contente i file .npz di ogni immagine")
+    parser = argparse.ArgumentParser(description="Script for sampling images and executing the 'dump' command from tfci.py script")
+    parser.add_argument("input_path", type=str, help="The directory path containing all the images")
+    parser.add_argument("output_path", type=str, help="The directory path of destination, where store all the .npz file dumped")
     parser.add_argument("tensor-name", type=str, help="The name of the specific tensor to extract")
     parser.add_argument("model", type=str, help="the name of the specific model (es 'hific-lo')")
     parser.add_argument("-b", nargs='?', default=0, type=int)

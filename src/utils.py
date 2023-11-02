@@ -58,3 +58,13 @@ def reshape_all_3D(tensor_list:list):
             else:
                 tensor_c.tensor = tf.squeeze(tensor_c.tensor)
     return tensor_list
+
+def convert_to_tensor_list(tensor_container_list:list, tensor_type:TensorType=TensorType.NP_TENSOR):
+    return [tensor_c.tensor for tensor_c in tensor_container_list]
+
+# Convert a list of narray into a list of tf tensors
+def convert_to_tf(tensors:list):
+    for tensor_c in tensors:
+        tensor_c.tensor = tf.convert_to_tensor(tensor_c.get_tensor())
+        tensor_c.tensor_type = TensorType.TF_TENSOR
+    return

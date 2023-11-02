@@ -56,7 +56,7 @@ def main(args):
     tf_tensors_list = loader.load_tensors(args_list[0], n=int(args_list[1]))
     tf_tensors_list = utils.reshape_all_3D(tf_tensors_list)
     test_tensor = tf_tensors_list[0]
-    # visualize_data.plot_tensor_fft_spectrum(test_tensor)
+    visualize_data.plot_tensor_fft_spectrum(test_tensor)
     visualize_data.plot_slices_average(test_tensor)
     return
 

@@ -1,3 +1,4 @@
+from os.path import basename, splitext, join
 import tensorflow as tf
 import numpy as np
 import argparse
@@ -8,11 +9,12 @@ from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D
 
 import loader
+import utils
 
 # Creazione di un tensore di esempio (sostituisci con il tuo tensore effettivo)
 # Il tensore dovrebbe avere la forma (n_campioni, n_dimensioni)
 
-OPERATIONS = ['statistics', 'statistics-all', 'TSNE']
+OPERATIONS = ['statistics-all', 'TSNE']
 COLORS = ["blue", "green", "red", "orange", "purple"]
 
 def my_TSNE(tensors):
@@ -35,7 +37,6 @@ def my_TSNE(tensors):
     # Mostra il grafico
     plt.show()
 
-def statistics(tensor_list):
     # Inizializza le liste per raccogliere le statistiche
     std_list = []
     var_list = []
@@ -76,7 +77,7 @@ def statistics(tensor_list):
 
     plt.savefig('statistics_test.png')
 
-def statistics_axis(tensor_list, axis=0):
+def statistics_axis(tensor_list, axis=0, output_path="./"):
     measures = ["Standard Deviation", "Variance", "Mean", "Min", "Max"]
     # Inizializza le liste per raccogliere le statistiche
     statistics = {
@@ -122,7 +123,7 @@ def statistics_axis(tensor_list, axis=0):
         axs[i].set_ylabel('Frequency')
 
     plt.tight_layout()
-    plt.savefig('statistics_test_axis'+ str(axis) + '.png')
+    plt.savefig(join(output_path, 'statistics_test_axis' + str(axis) + '.png'))
 
 def plot_3d_tensor(tensor, filename="3d_tensor_plot.png"):
     fig = plt.figure()
@@ -189,8 +190,10 @@ def my_PCA(tensor, n_components = 2):
 
     plt.show()
 
-def plot_tensor_fft_spectrum(tensor, log_scale=False):
+def plot_tensor_fft_spectrum(tensor, log_scale=False, save_in="./"):
+    name = "unknown"
     if isinstance(tensor, TensorContainer):
+        name = tensor.get_name()
         tensor = tensor.get_tensor()
     x, y, z = tensor.shape
     fft_results = []
@@ -202,21 +205,20 @@ def plot_tensor_fft_spectrum(tensor, log_scale=False):
     # Plotta lo spettro dell'FFT
     plt.imshow(np.log1p(fft_magnitude), cmap='viridis')  # Applica il logaritmo per una migliore visualizzazione
     plt.colorbar()
-    plt.title('Spettro dell\'FFT del Tensore')
-    plt.show()
+    plt.title(f'Tensor spectrum (FFT) {name}')
+    plt.savefig(join(save_in, name))
 
 def main(args):
 
-    np_tensors_list = loader.load_from_directory(args.input_path, args.n)
-
+    tensor_container_list = loader.load_from_directory(args.input_path, args.n)
+    tensors_list = utils.convert_to_tensor_list(tensor_container_list)
     operation = args.op
     if operation == OPERATIONS[0]:
-        statistics(np_tensors_list)
-    elif operation == OPERATIONS[1]:
         for i  in range(0, 4):
-            statistics_axis(np_tensors_list, axis=i)
-    elif operation == OPERATIONS[2]:
-        my_TSNE(np_tensors_list)
+            statistics_axis(tensors_list, axis=i, output_path=args.output_path)
+        statistics_axis(tensors_list, axis=None, output_path=args.output_path)
+    elif operation == OPERATIONS[1]:
+        my_TSNE(tensors_list)
 
 def parse_args():
     parser = argparse.ArgumentParser(

@@ -50,8 +50,8 @@ def parse_args():
         help="Specify the name of the model"
     )
     dump_cmd.add_argument(
-        "--tensors",
-        nargs="?",
+        "-t", "--tensors",
+        nargs="+",
         required=True,
         help="The name of the tensor to extract"
     )

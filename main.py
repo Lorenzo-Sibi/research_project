@@ -2,7 +2,7 @@ import argparse
 import os
 
 from src import preprocess
-from src.tensor_extraction import dump_tensor, dump_tensor_all
+from src import tensor_extraction
 from src import utils
 
 MODELS_LIST = [
@@ -21,9 +21,9 @@ def main(args):
         preprocess.crop_all(args.input_directory, args.output_directory, target_width, target_height)
     if args.command == "dump":
         if args.all_images:
-            dump_tensor_all(args.input_directory, args.output_directory, args.model, args.tensors)
+            tensor_extraction.dump_tensor_all(args.input_directory, args.output_directory, args.model, args.tensors)
         else:
-            dump_tensor(args.input_directory, args.output_directory, args.model, args.tensors)
+            tensor_extraction.dump_tensor(args.input_directory, args.output_directory, args.model, args.tensors)
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -50,8 +50,9 @@ def parse_args():
         help="Specify the name of the model"
     )
     dump_cmd.add_argument(
-        "tensors",
+        "--tensors",
         nargs="?",
+        required=True,
         help="The name of the tensor to extract"
     )
 
@@ -77,6 +78,7 @@ def parse_args():
             "output_directory",
             help="output directory"
         )
+    print(parser.parse_args())
     return parser.parse_args()
 
 if __name__ == "__main__":

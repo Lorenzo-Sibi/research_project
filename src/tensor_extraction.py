@@ -18,12 +18,15 @@ RESIZED_DESTINATION = "/mnt/ssd-data/sibi/resized_images"
 random.seed(RANDOM_SEED)
 
 def dump_tensor_all(input_directory, output_directory, model, tensor_names:list):
-    image_filenames = [image_filename for image_filename in os.listdir(input_directory) if os.path.isfile(image_filename)]
+    image_filenames = [image_filename for image_filename in os.listdir(input_directory)]
     n, n_images = (0, len(image_filenames))
+    print(n_images)
     for image_filename in image_filenames:
         output_file = os.path.join(output_directory, Path(image_filename).stem + ".npz")
         input_file = os.path.join(input_directory, image_filename)
-
+        print("FILENAME:", image_filename)
+        print("input_file:", input_file)
+        print("output_file:", output_file)
         tfci.dump_tensor(model, tensor_names, input_file, output_file)
         n += 1
         print("{0}/{1}".format(n, n_images))

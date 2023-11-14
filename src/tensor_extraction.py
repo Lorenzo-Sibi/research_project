@@ -3,10 +3,9 @@ import shutil
 import sys
 import random
 import argparse
-import tensorflow as tf
 import numpy as np
-
-import utils
+from pathlib import Path
+from src import utils, RANDOM_SEED
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "compression-master/models"))
 import tfci
 
@@ -16,20 +15,27 @@ MODEL_NAME = "hific-lo"
 RESIZED_DESTINATION = "/mnt/ssd-data/sibi/resized_images"
 
 # SEED
-random.seed(42)
+random.seed(RANDOM_SEED)
 
-def dump_tensor(input, output_path, tensor_names:list, model_name, n_images):
-    n = 0
-    for image_file in os.listdir(input):
-        output_file = os.path.join(output_path, image_file + ".npz")
-        input_file = os.path.join(input, image_file)
+def dump_tensor_all(input_directory, output_directory, model, tensor_names:list):
+    image_filenames = [image_filename for image_filename in os.listdir(input_directory) if os.path.isfile(image_filename)]
+    n, n_images = (0, len(image_filenames))
+    for image_filename in image_filenames:
+        output_file = os.path.join(output_directory, Path(image_filename).stem + ".npz")
+        input_file = os.path.join(input_directory, image_filename)
 
-        tfci.dump_tensor(model_name, tensor_names, input_file, output_file)
-        #parametri_script = ["python", args.percorso_script_tfci, metodo_dump, args.nome_tensore, percorso_immagine]
+        tfci.dump_tensor(model, tensor_names, input_file, output_file)
         n += 1
         print("{0}/{1}".format(n, n_images))
     return
 
+def dump_tensor(input_directory, output_directory, model, tensor_names:list):
+    """Dumps the given tensors of an image from a model to .npz files."""
+    if not os.path.exists(output_directory):
+        os.mkdir(output_directory, mode=777)
+    tfci.dump_tensor(model, tensor_names, input_directory, output_directory)
+    
+    
 def extract_tensors(input_path, output_path, tensor_names:list, model_name, batch_size=0):
     if not os.path.exists(input_path):
         print("images path not avaiable or doesn't exist")

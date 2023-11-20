@@ -19,11 +19,15 @@ def main(args):
     if args.command == "crop":
         target_width, target_height = args.size
         preprocess.crop_all(args.input_directory, args.output_directory, target_width, target_height)
-    if args.command == "dump":
+    elif args.command == "dump":
         if args.all_images:
             tensor_extraction.dump_tensor_all(args.input_directory, args.output_directory, args.model, args.tensors)
         else:
             tensor_extraction.dump_tensor(args.input_directory, args.output_directory, args.model, args.tensors)
+    elif args.command == "compress":
+        pass
+    elif args.command == "decompress":
+        pass
 
 def parse_args():
     parser = argparse.ArgumentParser()

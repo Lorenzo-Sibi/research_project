@@ -53,11 +53,23 @@ def parse_args():
 def main(args):
     args_list = args.list # input_path, batch_size
 
-    tf_tensors_list = loader.load_tensors(args_list[0], n=int(args_list[1]))
-    tf_tensors_list = utils.reshape_all_3D(tf_tensors_list)
-    test_tensor = tf_tensors_list[0]
-    visualize_data.plot_tensor_fft_spectrum(test_tensor)
-    visualize_data.plot_slices_average(test_tensor)
+    # tf_tensors_container_list = loader.load_tensors(args_list[0], n=int(args_list[1]))
+    # tf_tensors_container_list = utils.reshape_all_3D(tf_tensors_container_list)
+    
+    # for tensor_c in tf_tensors_container_list:
+    #     visualize_data.plot_tensor_fft_spectrum(tensor_c, log_scale=True, save_in=args_list[2])
+    real = "real"
+    fake = "fake"
+    real_image_folder = args_list[0]
+    fake_image_folder = args_list[1]
+
+    real_images_list = utils.load_images_as_list(real_image_folder, resolution=(64, 64))
+    fake_images_list = utils.load_images_as_list(fake_image_folder, resolution=(64, 64))
+    visualize_data.plot_tsne([real_images_list, fake_images_list], [real, fake])
+    
+    # test_tensor = tf_tensors_container_list[0]
+    # visualize_data.plot_tensor_fft_spectrum(test_tensor)
+    # visualize_data.plot_slices_average(test_tensor)
     return
 
 if __name__ == "__main__":

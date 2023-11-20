@@ -1,15 +1,21 @@
 from os.path import basename, splitext, join
+from os import listdir
+import argparse
+
 import tensorflow as tf
 import numpy as np
-import argparse
-from utils import TensorType, TensorContainer
+import pandas as pd
+
+from src.utils import TensorType, TensorContainer
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 from mpl_toolkits.mplot3d import Axes3D
+from PIL import Image
 
-import loader
-import utils
+from src import loader, utils
 
 # Creazione di un tensore di esempio (sostituisci con il tuo tensore effettivo)
 # Il tensore dovrebbe avere la forma (n_campioni, n_dimensioni)
@@ -17,67 +23,7 @@ import utils
 OPERATIONS = ['statistics-all', 'TSNE']
 COLORS = ["blue", "green", "red", "orange", "purple"]
 
-def my_TSNE(tensors):
-
-    # Riduci la dimensionalità dei dati con t-SNE
-    tsne = TSNE(n_components=3, perplexity=5)  # Riduzione a 3 dimensioni
-    reduced_data = tsne.fit_transform(tensors)
-
-    # Visualizzazione dei dati ridotti in 3D
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(reduced_data[:, 0], reduced_data[:, 1], reduced_data[:, 2], c='b', marker='o', label='Dati ridotti')
-
-    # Personalizza il grafico
-    ax.set_xlabel('Dimensione Ridotta 1')
-    ax.set_ylabel('Dimensione Ridotta 2')
-    ax.set_zlabel('Dimensione Ridotta 3')
-    ax.set_title('Visualizzazione dati ridotti in 3D')
-
-    # Mostra il grafico
-    plt.show()
-
-    # Inizializza le liste per raccogliere le statistiche
-    std_list = []
-    var_list = []
-    mean_list = []
-    min_list = []
-    max_list = []
-    
-    # Calcola le statistiche per ciascun tensore nella lista
-    for tensor_c in tensor_list:
-        tensor = tensor_c.tensor
-        if not isinstance(tensor, np.ndarray):
-            tensor = tensor.numpy()
-        std_list.append(np.std(tensor))
-        var_list.append(np.var(tensor))
-        mean_list.append(np.mean(tensor))
-        min_list.append(np.min(tensor))
-        max_list.append(np.max(tensor))
-
-    # Crea un istogramma per ciascuna statistica
-    fig, axs = plt.subplots(1, 5, figsize=(20, 4))
-
-    axs[0].hist(std_list, bins=20, color='blue', alpha=0.7)
-    axs[0].set_title('Standard Deviation')
-    axs[:3].set_xlabel('Value')
-    axs[:3].set_ylabel('Frequency')
-
-    axs[1].hist(var_list, bins=20, color='green', alpha=0.7)
-    axs[1].set_title('Variance')
-
-    axs[2].hist(mean_list, bins=20, color='red', alpha=0.7)
-    axs[2].set_title('Mean')
-
-    axs[3].hist(min_list, bins=20, color='orange', alpha=0.7)
-    axs[3].set_title('Min.')
-
-    axs[4].hist(max_list, bins=20, color='purple', alpha=0.7)
-    axs[4].set_title('Max')
-
-    plt.savefig('statistics_test.png')
-
-def statistics_axis(tensor_list, axis=0, output_path="./"):
+def statistics_axis(tensor_list, axis=0, bins=40, output_path="./"):
     measures = ["Standard Deviation", "Variance", "Mean", "Min", "Max"]
     # Inizializza le liste per raccogliere le statistiche
     statistics = {
@@ -125,72 +71,29 @@ def statistics_axis(tensor_list, axis=0, output_path="./"):
     plt.tight_layout()
     plt.savefig(join(output_path, 'statistics_test_axis' + str(axis) + '.png'))
 
-def plot_3d_tensor(tensor, filename="3d_tensor_plot.png"):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    x, y, z = tensor.shape
-    x, y, z = range(x), range(y), range(z)
-
-    X, Y, Z = [i for i in x for _ in y for __ in z], [i for _ in y for i in x for __ in z], [i for _ in y for __ in x for i in z]
-    data = tensor.flatten()
-
-    ax.scatter(X, Y, Z, c=data, cmap='viridis', marker='o')
-    ax.set_xlabel('Asse X')
-    ax.set_ylabel('Asse Y')
-    ax.set_zlabel('Asse Z')
-    ax.set_title('Rappresentazione 3D del Tensore')
-    
-    plt.savefig(filename)
-
-def plot_slices_average(tensor, cmap="grey"):
+def plot_latent_representation(tensor, output_path=None, cmap="grey"):
     name = "unknown"
     if isinstance(tensor, TensorContainer):
         name = tensor.get_name()
-        tensor = tensor.get_tensor()
+        tensor = tf.squeeze(tensor.get_tensor())
     x, y, z = tensor.shape
     slices = []
 
     for i in range(z):
-        # Seleziona il sottotensore lungo l'asse X
         slice_tensor = tensor[:, :, i]
-
-        # Aggiungi il sottotensore alla lista delle "slices"
         slices.append(slice_tensor)
 
-    # Calcola la media di tutte le "slices"
+    # Calcolate all slice's mean"
     avg_slice = np.mean(slices, axis=0)
-    # Crea un grafico con la media delle immagini
     plt.imshow(avg_slice, cmap=cmap)
-    plt.title(f'Mean Rappresentation of {name}')
-    plt.show()
+    plt.savefig(join(output_path, f"latent_space_image_{name}.png"))
 
-def my_PCA(tensor, n_components = 2):
-    # 1. Riduci il tensore a una forma adatta per la PCA
-    # Supponiamo che 'my_tensor' sia il tuo tensore con forma (x, y, z)
-    x, y, z = tensor.shape
-    tensor_flattened = tensor.reshape(-1, y)
+def plot_latent_representation_all(input_directory, output_directory):
+    latents_list = loader.load_tensors_as_list(input_directory)
+    for laten_space in latents_list:
+        plot_latent_representation(laten_space, output_path=output_directory)
 
-    # 2. Esegui la PCA per ridurre le dimensioni del tensore
-    pca = PCA(n_components=n_components)
-    reduced_tensor = pca.fit_transform(tensor_flattened)
-
-    # 3. Plotta il risultato ridotto
-    if n_components == 2:
-        plt.scatter(reduced_tensor[:, 0], reduced_tensor[:, 1], marker='.')
-        plt.xlabel('Prima Componente Principale')
-        plt.ylabel('Seconda Componente Principale')
-    elif n_components == 3:
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(reduced_tensor[:, 0], reduced_tensor[:, 1], reduced_tensor[:, 2], marker='.')
-        ax.set_xlabel('Prima Componente Principale')
-        ax.set_ylabel('Seconda Componente Principale')
-        ax.set_zlabel('Terza Componente Principale')
-
-    plt.show()
-
-def plot_tensor_fft_spectrum(tensor, log_scale=False, save_in="./"):
+def plot_tensor_fft_spectrum(tensor, log_scale=True, save_in="./"):
     name = "unknown"
     if isinstance(tensor, TensorContainer):
         name = tensor.get_name()
@@ -204,22 +107,39 @@ def plot_tensor_fft_spectrum(tensor, log_scale=False, save_in="./"):
 
     # Plotta lo spettro dell'FFT
     plt.imshow(np.log1p(fft_magnitude), cmap='viridis')  # Applica il logaritmo per una migliore visualizzazione
-    plt.colorbar()
     plt.title(f'Tensor spectrum (FFT) {name}')
     plt.savefig(join(save_in, name))
 
-def main(args):
+def plot_pca(images_lists, labels, n_components=2):
+    pca_results = []
+    for image_list in images_lists:
+        matrix = np.squeeze(np.array([np.array(image).flatten().reshape(1, -1) for image in image_list]))
+        print("MATRIX SHAPE", matrix.shape)
+        pca = PCA(n_components=2, random_state=42)
+        pipe = Pipeline([('scaler', StandardScaler()), ('pca', pca)])
+        pca_results.append(pipe.fit_transform(matrix))
+    for pca_result, label in zip(pca_results, labels):
+        plt.scatter(pca_result[:, 0], pca_result[:, 1], label=label)
+        plt.xlabel('First Main Component')
+        plt.ylabel('Second Main Component')
+    plt.legend()
+    plt.show()
 
-    tensor_container_list = loader.load_from_directory(args.input_path, args.n)
-    tensors_list = utils.convert_to_tensor_list(tensor_container_list)
-    operation = args.op
-    if operation == OPERATIONS[0]:
-        for i  in range(0, 4):
-            statistics_axis(tensors_list, axis=i, output_path=args.output_path)
-        statistics_axis(tensors_list, axis=None, output_path=args.output_path)
-    elif operation == OPERATIONS[1]:
-        my_TSNE(tensors_list)
-
+def plot_tsne(images_lists, labels, n_components=2, perplexity=5):
+    tsne_results = []
+    for image_list in images_lists:
+        matrix = np.squeeze(np.array([np.array(image).flatten().reshape(1, -1) for image in image_list]))
+        print("MATRIX SHAPE", matrix.shape)
+        tsne = TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
+        pipe = Pipeline([('scaler', StandardScaler()), ('tsne', tsne)])
+        tsne_results.append(tsne.fit_transform(matrix))
+    for tsne_result, label in zip(tsne_results, labels):
+        print("SHAPE RESULT", tsne_result.shape)
+        plt.scatter(tsne_result[:], tsne_result[:], label=label)
+        plt.xlabel('First Main Component')
+        plt.ylabel('Second Main Component')
+    plt.legend()
+    plt.show()
 def parse_args():
     parser = argparse.ArgumentParser(
         prog='Visualize Data',
@@ -232,6 +152,22 @@ def parse_args():
     parser.add_argument("-n", "--n", default=0, type=int ,help="Tensors batch size (default: all files)")
 
     return parser.parse_args()
+
+def main(args):
+
+    image_directory = args.input_path
+    image_list = loader.load_images_from_directory(image_directory)
+    plot_pca(image_list, n_components=3)  # Imposta il numero di componenti desiderato (2 o 3)
+
+    # tensor_container_list = loader.load_from_directory(args.input_path, args.n)
+    # tensors_list = utils.convert_to_tensor_list(tensor_container_list)
+    # operation = args.op
+    # if operation == OPERATIONS[0]:
+    #     for i  in range(0, 4):
+    #         statistics_axis(tensors_list, axis=i, output_path=args.output_path)
+    #     statistics_axis(tensors_list, axis=None, output_path=args.output_path)
+    # elif operation == OPERATIONS[1]:
+    #     my_TSNE(tensors_list)
 
 if __name__ == "__main__":
     args = parse_args()

@@ -1,14 +1,35 @@
 import os
 from os.path import basename, splitext
 import random
-import argparse
+from PIL import Image
 import numpy as np
 import tensorflow as tf
-import utils
-from utils import TensorType, TensorContainer
+
+from src import *
+from src import loader
+from src import utils
+from src.utils import TensorType, TensorContainer
 
 # Setting global seed
-random.seed(42)
+random.seed(RANDOM_SEED)
+
+def load_images_as_list(input_path, batch_size=0):
+    if not os.path.exists(input_path):
+        print("Path not avaiable or doesn't exist")
+        return
+    print("Loading images...")
+    images_set = [os.path.join(input_path, file) 
+                  for file in os.listdir(input_path) 
+                  if file.endswith((".jpg", ".png"))]
+    n_images = batch_size
+    if n_images == 0 or n_images is None:
+        images_batch = images_set
+        n_images = len(images_set)
+    else:
+        images_batch = random.sample(images_set, n_images)
+    image_list = [Image.open(path) for path in images_batch if path.endswith((".jpg", ".jpeg", ".png"))]
+    print("Loading completed.")
+    return image_list
 
 # Load an entire tensors batch from "directory" (.npz or .npy files) and return a list of narrays
 def load_from_directory(directory, batch_size, return_list=True):
@@ -19,7 +40,7 @@ def load_from_directory(directory, batch_size, return_list=True):
         files_batch = random.sample(files, batch_size)
 
     tensors_dict = []
-
+    print("Loading tensors...")
     for filename in files_batch:
         file_path = os.path.join(directory, filename)
         name = splitext(basename(filename))[0]
@@ -42,31 +63,8 @@ def load_from_directory(directory, batch_size, return_list=True):
     else:
         print("No-Dict Returned.")
 
-
-
-
-def load_tensors(input_path, n=0, tensor_type=TensorType.TF_TENSOR):
-    tensors = load_from_directory(input_path, n)
+def load_tensors_as_list(input_directory, n=0, tensor_type=TensorType.TF_TENSOR):
+    tensors = load_from_directory(input_directory, n)
     if tensor_type == TensorType.TF_TENSOR:
         utils.convert_to_tf(tensors)
     return tensors
-
-def main(args):
-    np_arr_list = load_from_directory(args.input_path, args.n ,return_list=True)
-    tf_arr_list = utils.convert_to_tf(np_arr_list)
-    print(tf_arr_list)
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        prog='Loader Module',
-        description='Load numpy file (.npz .npy). If normaly execuded print the results',
-        epilog='')
-    
-    parser.add_argument("input_path", help="The inputh path where are loceted all the tensors")
-    parser.add_argument("output_path", help="")
-    parser.add_argument("-n", "--n", default=0, type=int ,help="Import size (default: all the files)")
-
-    return parser.parse_args()
-
-if __name__  == "__main__":
-    main(parse_args())

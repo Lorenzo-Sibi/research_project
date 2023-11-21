@@ -43,7 +43,7 @@ def dump_tensor(input_directory, output_directory, model, tensor_names:list):
         os.mkdir(output_directory, mode=777)
     tfci.dump_tensor(model, tensor_names, input_directory, output_directory)
 
-def compress(model, input_image, output_directory, rd_parameter=None):
+def compress(model, input_image, rd_parameter=None):
   """Compresses a PNG file to a PNG file"""
   bitstring = tfci.compress_image(model, input_image, rd_parameter=rd_parameter)
   packed = tfc.PackedTensors(bitstring)
@@ -55,7 +55,8 @@ def compress(model, input_image, output_directory, rd_parameter=None):
     if t.dtype.is_floating and t.shape == (1,):
       tensors[i] = tf.squeeze(t, 0)
 
-  return receiver(*tensors)
+  output_image, = receiver(*tensors)
+  return output_image
 
 def compress_all(model, input_directory, output_directory, rd_parameter=None): 
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)] # es. [image1.png, image2.png, image3.png]
@@ -63,14 +64,10 @@ def compress_all(model, input_directory, output_directory, rd_parameter=None):
     print(f"{n_images} founded. Start compressing in .tfci files...")
     
     for i, image_filename in enumerate(image_filenames):
-        output_file = os.path.join(output_directory, Path(image_filename).stem + ".tfci")
         input_file = os.path.join(input_directory, image_filename)
 
         input_image = tfci.read_png(input_file)
-        compressed_image = compress(model, input_image, output_file, rd_parameter)
-        print("PRE SQUEEZED IMAGE TENSOR", compressed_image)
-        tf.squeeze(compressed_image)
-        print("SQUEEZED IMAGE TENSOR", compressed_image)
+        compressed_image = compress(model, input_image, rd_parameter)
         tfci.write_png(output_directory, compressed_image)
 
         print(f"{i+1}/{n_images}")

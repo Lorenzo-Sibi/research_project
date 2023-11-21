@@ -90,7 +90,8 @@ def plot_latent_representation(tensor, output_path=None, cmap="grey"):
 
 def plot_latent_representation_all(input_directory, output_directory):
     latents_list = loader.load_tensors_as_list(input_directory)
-    for laten_space in latents_list:
+    for i, laten_space in enumerate(latents_list):
+        print(f"Plotting {i}/{len(latents_list)}")
         plot_latent_representation(laten_space, output_path=output_directory)
 
 def plot_tensor_fft_spectrum(tensor, log_scale=True, save_in="./"):
@@ -140,35 +141,3 @@ def plot_tsne(images_lists, labels, n_components=2, perplexity=5):
         plt.ylabel('Second Main Component')
     plt.legend()
     plt.show()
-def parse_args():
-    parser = argparse.ArgumentParser(
-        prog='Visualize Data',
-        description='Compute data analysis on a tensors batch (file must end with .npz)',
-        epilog='')
-    
-    parser.add_argument("input_path", help="The inputh path where are loceted all the tnesors")
-    parser.add_argument("output_path", default="./")
-    parser.add_argument("-op", required=True, choices=OPERATIONS)
-    parser.add_argument("-n", "--n", default=0, type=int ,help="Tensors batch size (default: all files)")
-
-    return parser.parse_args()
-
-def main(args):
-
-    image_directory = args.input_path
-    image_list = loader.load_images_from_directory(image_directory)
-    plot_pca(image_list, n_components=3)  # Imposta il numero di componenti desiderato (2 o 3)
-
-    # tensor_container_list = loader.load_from_directory(args.input_path, args.n)
-    # tensors_list = utils.convert_to_tensor_list(tensor_container_list)
-    # operation = args.op
-    # if operation == OPERATIONS[0]:
-    #     for i  in range(0, 4):
-    #         statistics_axis(tensors_list, axis=i, output_path=args.output_path)
-    #     statistics_axis(tensors_list, axis=None, output_path=args.output_path)
-    # elif operation == OPERATIONS[1]:
-    #     my_TSNE(tensors_list)
-
-if __name__ == "__main__":
-    args = parse_args()
-    main(args)

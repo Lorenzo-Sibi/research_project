@@ -5,6 +5,8 @@ import random
 import argparse
 import numpy as np
 from pathlib import Path
+import tensorflow as tf
+import tensorflow_compression as tfc
 
 from src import *
 from src import utils, loader
@@ -22,17 +24,17 @@ random.seed(RANDOM_SEED)
 
 def dump_tensor_all(input_directory, output_directory, model, tensor_names:list):
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)]
-    n, n_images = (0, len(image_filenames))
+    n_images = len(image_filenames)
     print(f"{n_images} founded. Start extraction...")
-    for image_filename in image_filenames:
+    
+    for i, image_filename in enumerate(image_filenames):
         output_file = os.path.join(output_directory, Path(image_filename).stem + ".npz")
         input_file = os.path.join(input_directory, image_filename)
         print("FILENAME:", image_filename)
-        print("input_file:", input_file)
-        print("output_file:", output_file)
+
         tfci.dump_tensor(model, tensor_names, input_file, output_file)
-        n += 1
-        print("{0}/{1}".format(n, n_images))
+        
+        print(f"{i+1}/{n_images}")
     print("Extraction completed.")
 
 def dump_tensor(input_directory, output_directory, model, tensor_names:list):
@@ -41,29 +43,48 @@ def dump_tensor(input_directory, output_directory, model, tensor_names:list):
         os.mkdir(output_directory, mode=777)
     tfci.dump_tensor(model, tensor_names, input_directory, output_directory)
 
-def compress(model, input_directory, output_directory, rd_parameter=None):
+def compress(model, input_image, output_directory, rd_parameter=None):
+  """Compresses a PNG file to a PNG file"""
+  bitstring = tfci.compress_image(model, input_image, rd_parameter=rd_parameter)
+  packed = tfc.PackedTensors(bitstring)
+  receiver = tfci.instantiate_model_signature(packed.model, "receiver")
+  tensors = packed.unpack([t.dtype for t in receiver.inputs])
+
+  # Find potential RD parameter and turn it back into a scalar.
+  for i, t in enumerate(tensors):
+    if t.dtype.is_floating and t.shape == (1,):
+      tensors[i] = tf.squeeze(t, 0)
+
+  return receiver(*tensors)
+
+def compress_all(model, input_directory, output_directory, rd_parameter=None): 
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)] # es. [image1.png, image2.png, image3.png]
-    n, n_images = (0, len(image_filenames))
+    n_images = len(image_filenames)
     print(f"{n_images} founded. Start compressing in .tfci files...")
-    for image_filename in image_filenames:
+    
+    for i, image_filename in enumerate(image_filenames):
         output_file = os.path.join(output_directory, Path(image_filename).stem + ".tfci")
         input_file = os.path.join(input_directory, image_filename)
-        tfci.compress(model, input_file, output_file, rd_parameter)
-        n += 1
-        print("{0}/{1}".format(n, n_images))
-    print("Compression completed.")
 
-def decompress(input_directory, output_directory):
-    filenames = [filename for filename in os.listdir(input_directory)] # es. [file1.png, file2.png, file3.png]
-    n, n_files = (0, len(filenames))
-    print(f"{n_files} founded. Start decompressing in .tfci files...")
-    for filename in filenames:
-        output_file = os.path.join(output_directory, Path(filename).stem + ".tfci")
-        input_file = os.path.join(input_directory, filename)
-        tfci.decompress(input_file, output_file)
-        n += 1
-        print("{0}/{1}".format(n, n_files))
-    print("Decompression completed.")
+        input_image = tfci.read_png(input_file)
+        compressed_image = compress(model, input_image, output_file, rd_parameter)
+        tfci.write_png(output_directory, compressed_image)
+
+        print(f"{i+1}/{n_images}")
+    print(f"Compression completed. {n_images} compressed.")
+
+# def decompress(input_directory, output_directory):
+#     filenames = [filename for filename in os.listdir(input_directory)] # es. [file1.png, file2.png, file3.png]
+#     n_files = len(filenames)
+#     print(f"{n_files} founded. Start decompressing in .tfci files...")
+
+#     for i, filename in enumerate(filenames):
+#         output_file = os.path.join(output_directory, Path(filename).stem + ".tfci")
+#         input_file = os.path.join(input_directory, filename)
+#         tfci.decompress(input_file, output_file)
+#         print(f"{i+1}/{n_files}")
+#     print("Decompression completed.")
+
 
 # def execute(command):
 #     filenames = [filename for filename in os.listdir(input_directory)] # es. [file1.png, file2.png, file3.png]

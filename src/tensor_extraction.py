@@ -64,11 +64,12 @@ def compress_all(model, input_directory, output_directory, rd_parameter=None):
     print(f"{n_images} founded. Start compressing in .tfci files...")
     
     for i, image_filename in enumerate(image_filenames):
+        output_file = os.path.join(output_directory, Path(image_filename).stem + ".png")
         input_file = os.path.join(input_directory, image_filename)
 
         input_image = tfci.read_png(input_file)
         compressed_image = compress(model, input_image, rd_parameter)
-        tfci.write_png(output_directory, compressed_image)
+        tfci.write_png(output_file, compressed_image)
 
         print(f"{i+1}/{n_images}")
     print(f"Compression completed. {n_images} compressed.")

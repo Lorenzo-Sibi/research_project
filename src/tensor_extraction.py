@@ -68,7 +68,9 @@ def compress_all(model, input_directory, output_directory, rd_parameter=None):
 
         input_image = tfci.read_png(input_file)
         compressed_image = compress(model, input_image, output_file, rd_parameter)
-        print(compressed_image)
+        print("PRE SQUEEZED IMAGE TENSOR", compressed_image.shape)
+        tf.squeeze(compressed_image)
+        print("SQUEEZED IMAGE TENSOR", compressed_image.shape)
         tfci.write_png(output_directory, compressed_image)
 
         print(f"{i+1}/{n_images}")

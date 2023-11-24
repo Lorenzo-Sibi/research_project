@@ -60,15 +60,16 @@ def list_tensors(model):
   return log
 
 def tensors_log(logdir='tensors_logs'):
-    for model_class in MODELS_DICT:
+    for i, model_class in enumerate(MODELS_DICT):
         for variant in MODELS_DICT[model_class]:
             for model in MODELS_DICT[model_class][variant]:
                 path = os.path.join(logdir, model_class, variant)
-                filename = os.path.join(path, model + "tensors" + ".txt")
+                filename = os.path.join(path, model + "_tensors" + ".txt")
                 if not os.path.exists(path):
                     os.makedirs(path)
                 with open(filename, "w") as f:
                    f.write(list_tensors(model))
+        print(f"{i}/{len(MODELS_DICT)}")
 
                 
 

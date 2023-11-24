@@ -1,15 +1,12 @@
 import os
-import shutil
 import sys
 import random
-import argparse
 import numpy as np
 from pathlib import Path
 import tensorflow as tf
 import tensorflow_compression as tfc
 
 from src import *
-from src import utils, loader
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "compression-master/models"))
 import tfci
@@ -21,6 +18,9 @@ RESIZED_DESTINATION = "/mnt/ssd-data/sibi/resized_images"
 
 # SEED
 random.seed(RANDOM_SEED)
+
+def list_tensors(model):
+   tfci.list_tensors(model)
 
 def dump_tensor_all(input_directory, output_directory, model, tensor_names:list):
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)]
@@ -61,7 +61,7 @@ def compress(model, input_image, rd_parameter=None):
 def compress_all(model, input_directory, output_directory, rd_parameter=None): 
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)] # es. [image1.png, image2.png, image3.png]
     n_images = len(image_filenames)
-    print(f"{n_images} founded. Start compressing in .tfci files...")
+    print(f"{n_images} founded. Start compressing in images...")
     
     for i, image_filename in enumerate(image_filenames):
         output_file = os.path.join(output_directory, Path(image_filename).stem + ".png")
@@ -73,28 +73,3 @@ def compress_all(model, input_directory, output_directory, rd_parameter=None):
 
         print(f"{i+1}/{n_images}")
     print(f"Compression completed. {n_images} compressed.")
-
-# def decompress(input_directory, output_directory):
-#     filenames = [filename for filename in os.listdir(input_directory)] # es. [file1.png, file2.png, file3.png]
-#     n_files = len(filenames)
-#     print(f"{n_files} founded. Start decompressing in .tfci files...")
-
-#     for i, filename in enumerate(filenames):
-#         output_file = os.path.join(output_directory, Path(filename).stem + ".tfci")
-#         input_file = os.path.join(input_directory, filename)
-#         tfci.decompress(input_file, output_file)
-#         print(f"{i+1}/{n_files}")
-#     print("Decompression completed.")
-
-
-# def execute(command):
-#     filenames = [filename for filename in os.listdir(input_directory)] # es. [file1.png, file2.png, file3.png]
-#     n, n_files = (0, len(filenames))
-#     print(f"{n_files} founded. Start decompressing in .tfci files...")
-#     for filename in filenames:
-#         output_file = os.path.join(output_directory, Path(filename).stem + ".tfci")
-#         input_file = os.path.join(input_directory, filename)
-#         command(input_file, output_file)
-#         n += 1
-#         print("{0}/{1}".format(n, n_files))
-#     print("Decompression completed.")

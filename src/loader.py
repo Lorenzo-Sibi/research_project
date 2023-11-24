@@ -39,7 +39,7 @@ def load_from_directory(directory, batch_size, return_list=True):
     else:
         files_batch = random.sample(files, batch_size)
 
-    tensors_dict = []
+    tensors_list = []
     print("Loading tensors...")
     for filename in files_batch:
         file_path = os.path.join(directory, filename)
@@ -48,20 +48,16 @@ def load_from_directory(directory, batch_size, return_list=True):
             data = np.load(file_path)
             if filename.endswith(".npz"):
                 for _, item in data.items():
-                    tensors_dict.append(TensorContainer(item, name, TensorType.NP_TENSOR)) 
+                    tensors_list.append(TensorContainer(item, name, TensorType.NP_TENSOR)) 
             else:
-                tensors_dict.append(TensorContainer(item, name, TensorType.NP_TENSOR))
+                tensors_list.append(TensorContainer(item, name, TensorType.NP_TENSOR))
         except Exception as e:
             print(f"Error loading {filename} file: {str(e)}")
             print("file path:", file_path)
             return
         
     print(f"Load complete. {len(files_batch)} files loaded succesfully.")
-
-    if return_list:
-        return tensors_dict
-    else:
-        print("No-Dict Returned.")
+    return tensors_list
 
 def load_tensors_as_list(input_directory, n=0, tensor_type=TensorType.TF_TENSOR):
     tensors = load_from_directory(input_directory, n)

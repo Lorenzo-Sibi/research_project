@@ -1,10 +1,18 @@
 import os
 import random
+import cv2
+import numpy as np
 from PIL import Image
 from pathlib import Path
 
 from src import *
 from src import loader
+
+HIGH_PASS_KERNEL = np.array([
+    [0.0, -1.0, 0.0], 
+    [-1.0, 4.0, -1.0],
+    [0.0, -1.0, 0.0]
+])
 
 random.seed(RANDOM_SEED)
 
@@ -40,3 +48,11 @@ def crop_all(input_directory, output_directory, target_width, target_height, for
     except Exception as e:
         print(e)
     print("Cropping completed.")
+
+def high_pass_filter_conv2D(image, kernel=HIGH_PASS_KERNEL):
+    kernel = kernel / np.sum(kernel) if np.sum(kernel) != 0 else 1
+    
+    # Filter the source image
+    image_flt = cv2.filter2D(image, -1, kernel)
+
+    return image_flt

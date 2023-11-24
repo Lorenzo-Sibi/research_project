@@ -30,65 +30,6 @@ class TensorContainer:
     
     def __str__(self):
       return f'{self.tensor}, name: {self.name}, tensor_type: {self.tensor_type}'
- 
-
-# Find the correct resolution for a list of images path
-def find_resolution(images_batch):
-    resolutions = []
-    # Compute the resolution for all images in the batch
-    for image_path in images_batch:
-        image = tf.image.decode_image(tf.io.read_file(image_path))
-        resolutions.append(tf.shape(image)[:-1])
-    average_resolution = tf.reduce_min(tf.stack(resolutions, axis=0), axis=0)
-    return average_resolution
-
-# Ridimensiona tutte le immagini alla risoluzione specificata
-def load_and_process_image(images_path, output_path, resolution):
-    print("Resizing images...")
-    for image_file in images_path:
-        image = tf.image.decode_image(tf.io.read_file(image_file), channels=3)
-        resized_image = tf.image.resize(image, resolution)
-        np_resized_image = resized_image.numpy()
-        image_name = os.path.splitext(os.path.split(image_file)[-1])[0]
-        tf.keras.utils.save_img(os.path.join(output_path, image_name + ".png"), np_resized_image, file_format="png")
-    return
-
-def load_images_as_list(input_path, resolution=None, batch_size=0):
-    if not os.path.exists(input_path):
-        print("Path not avaiable or doesn't exist")
-        return
-    # List of all images inside input_path directory (COMPLETE PATH)
-    print("Loading images...")
-    images_set = [os.path.join(input_path, file) 
-                  for file in os.listdir(input_path) 
-                  if file.endswith((".jpg", ".png"))]
-    n_images = batch_size
-    if n_images == 0 or n_images is None:
-        images_batch = images_set
-        n_images = len(images_set)
-    else:
-        images_batch = random.sample(images_set, n_images)
-    if resolution == None:
-        resolution = find_resolution(images_batch)
-    image_list = []
-    for path in images_batch:
-        if path.endswith((".jpg", ".jpeg", ".png")):
-            image = Image.open(path).resize(resolution)
-            image_list.append(image)
-    print("Loading completed.")
-    return image_list
-
-def reshape_all_3D(tensor_list:list):
-    for tensor_c in tensor_list:
-        tensor = tensor_c.get_tensor()
-        if len(tensor.shape) == 3:
-            continue
-        else:
-            if(tensor_c.get_tensor_type() == TensorType.NP_TENSOR):
-                tensor_c.tensor = tensor.squeeze()
-            else:
-                tensor_c.tensor = tf.squeeze(tensor_c.tensor)
-    return tensor_list
 
 def convert_to_tensor_list(tensor_container_list:list, tensor_type:TensorType=TensorType.NP_TENSOR):
     return [tensor_c.tensor for tensor_c in tensor_container_list]
@@ -148,3 +89,41 @@ def create_image_dataframe(image_folder, label):
     df = pd.DataFrame(image_data)
     
     return df
+
+def tensors_subtraction(tensor1, tensor2, normalize=True):
+    if isinstance(tensor1, TensorContainer) or isinstance(tensor2, TensorContainer):
+        type1 = tensor1.get_tensor_type()
+        type2 = tensor2.get_tensor_type()
+        tensor1 = tensor1.get_tensor()
+        tensor2 = tensor2.get_tensor()
+        if type1 != type2:
+            raise ValueError(f"Tensors of different type. \nTensor 1:{type1} (type)\nTensor 2:{type2} (type)")
+        assert(type1 == TensorType.TF_TENSOR)
+    
+    if tensor1.shape != tensor2.shape:
+        raise ValueError(f"Tensors with different shape. \nTensor 1:{tensor1.shape}\nTensor 2:{tensor2.shape}")
+    
+    if normalize:
+        # Normalizing both 3D tensors
+        tensor1, _ = tf.linalg.normalize(tensor1, axis=(0, 1))
+        tensor2, _ = tf.linalg.normalize(tensor2, axis=(0, 1))
+    
+    tensors_diff = tf.subtract(tensor1, tensor2)
+    tensors_diff = tf.squeeze(tensors_diff, 0)
+    return tf.abs(tensors_diff)
+
+def from_3D_tensor_to_2D(tensor):
+    if isinstance(tensor, TensorContainer):
+        name = tensor.get_name()
+        tensor = tf.squeeze(tensor.get_tensor())
+    
+    x, y, z = tensor.shape
+    slices = []
+
+    for i in range(z):
+        slice_tensor = tensor[:, :, i]
+        slices.append(slice_tensor)
+
+    # Calcolate all slice's mean"
+    avg_slice = np.mean(slices, axis=0)
+    return avg_slice

@@ -6,7 +6,7 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 
-from src.utils import TensorType, TensorContainer
+from src.utils import TensorContainer
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -17,13 +17,15 @@ from PIL import Image
 
 from src import loader, utils
 
-# Creazione di un tensore di esempio (sostituisci con il tuo tensore effettivo)
-# Il tensore dovrebbe avere la forma (n_campioni, n_dimensioni)
-
 OPERATIONS = ['statistics-all', 'TSNE']
 COLORS = ["blue", "green", "red", "orange", "purple"]
 
-def statistics_axis(tensor_list, axis=0, bins=40, output_path="./"):
+# Script per il plotting dei dati
+
+def statistics_axis(tensor_list, axis=0, bins=40, output_path="./", title=None):
+    if not title:
+        title = 'statistic_indexes'
+    
     measures = ["Standard Deviation", "Variance", "Mean", "Min", "Max"]
     # Inizializza le liste per raccogliere le statistiche
     statistics = {
@@ -56,37 +58,42 @@ def statistics_axis(tensor_list, axis=0, bins=40, output_path="./"):
             axis_stat = func(tensor, axis=axis) # Return an array of ndim elements (1 element if axis == 0)
             axis_stats.append(axis_stat)
 
-        # Compute the mean of specified measure along 0 axis (tensors)
+        # Compute the mean of specified measure along 0 axis (along tensors)
         avg_stat = np.mean(axis_stats, axis=0)
         statistics[measure.lower()] = avg_stat
     # Crea un set di grafici, uno per ciascuna misura statistica
     fig, axs = plt.subplots(len(measures), 1, figsize=(12, 20))
 
     for i, measure in enumerate(measures):
-        axs[i].hist(statistics[measure.lower()].flatten(), bins=40, color=COLORS[i], alpha=0.7)
+        axs[i].hist(statistics[measure.lower()].flatten(), bins=bins, color=COLORS[i], alpha=0.7)
         axs[i].set_title(f"Distribution of '{measure}' between {len(tensor_list)} tensors on axis {axis}")
         axs[i].set_xlabel(f'Value {measure}')
         axs[i].set_ylabel('Frequency')
 
     plt.tight_layout()
-    plt.savefig(join(output_path, 'statistics_test_axis' + str(axis) + '.png'))
+    plt.savefig(join(output_path, title + f'_axis{axis}.png'))
 
-def plot_latent_representation(tensor, output_path=None, cmap="grey"):
-    name = "unknown"
-    if isinstance(tensor, TensorContainer):
-        name = tensor.get_name()
-        tensor = tf.squeeze(tensor.get_tensor())
-    x, y, z = tensor.shape
-    slices = []
-
-    for i in range(z):
-        slice_tensor = tensor[:, :, i]
-        slices.append(slice_tensor)
-
-    # Calcolate all slice's mean"
-    avg_slice = np.mean(slices, axis=0)
-    plt.imshow(avg_slice, cmap=cmap)
-    plt.savefig(join(output_path, f"latent_space_image_{name}.png"))
+def plot_tensors_subtraction(tensor1, tensor2, output_path=None, cmap="grey", title="unknown", normalize=True, save=True):
+    if not output_path:
+        output_path = "./"
+    tensors_diff = utils.tensors_subtraction(tensor1, tensor2, normalize=normalize)
+    tensor_diff_2D = utils.from_3D_tensor_to_2D(tensors_diff)
+    plt.title(title)
+    plt.imshow(tensor_diff_2D, cmap=cmap)
+    if save:
+        plt.savefig(join(output_path, title + ".png"))
+    else:
+        plt.show()
+def plot_latent_representation(tensor, output_path=None, cmap="grey", name="unknown", save=True):
+    if not output_path:
+        output_path = "./"
+    latent_rep = utils.from_3D_tensor_to_2D(tensor)
+    plt.title(name)
+    plt.imshow(latent_rep, cmap=cmap)
+    if save:
+        plt.savefig(join(output_path, f"latent_space_image_{name}.png"))
+    else:
+        plt.show()
 
 def plot_latent_representation_all(input_directory, output_directory):
     latents_list = loader.load_tensors_as_list(input_directory)

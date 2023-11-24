@@ -33,6 +33,7 @@ def main(args):
                 args.output_directory, 
                 args.rd_parameter
             )
+    
     elif args.command == "crop":
         target_width, target_height = args.size
         preprocess.crop_all(
@@ -40,6 +41,10 @@ def main(args):
             args.output_directory, 
             target_width, 
             target_height)
+    
+    elif args.command == "tensors":
+        tensor_extraction.list_tensors(args.model)
+
     elif args.command == "dump":
         if args.all_images:
             tensor_extraction.dump_tensor_all(
@@ -110,6 +115,17 @@ def parse_args():
         required=True,
         help="The name of the tensor to extract"
     )
+
+    # 'tensors' subcommand.
+    tensors_cmd = subparser.add_parser(
+      "tensors",
+      formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+      description="Lists names of internal tensors of a given model.")
+    
+    tensors_cmd.add_argument(
+        "model",
+        choices=MODELS_LIST,
+        help="Unique model identifier. See 'models' command for options.")
 
     # 'crop' subcommand.
     crop_cmd = subparser.add_parser(

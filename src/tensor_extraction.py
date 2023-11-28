@@ -32,7 +32,7 @@ TENSORS_DICT = {
 
 
 def dump_tensor_all(input_directory, output_directory, models, one_image=False):
-    for model_class in models:
+    for i, model_class in enumerate(models):
         for variant in models[model_class]:
             for model in models[model_class][variant]:
                 output_path = Path(output_directory, model_class, variant, model)
@@ -45,6 +45,7 @@ def dump_tensor_all(input_directory, output_directory, models, one_image=False):
                 else:
                     dump_tensor_images(input_directory, output_path, model, tensor_name)
                 print("_"*100, "\n\n")
+        print(f"PROCESS {(i+1)/ len(models)* 100}% COMPETED.")
 
 def dump_tensor_images(input_directory, output_directory, model, tensor_name):
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)]

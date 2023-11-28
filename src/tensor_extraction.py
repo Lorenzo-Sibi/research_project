@@ -54,7 +54,7 @@ def dump_tensor_images(input_directory, output_directory, model, tensor_name):
     
     for i, image_filename in enumerate(image_filenames):
         output_file = Path(output_directory, Path(image_filename).stem + ".npz")
-        input_file = Path(input_directory, image_filename)
+        input_file = os.path.join(input_directory, image_filename)
         print("FILENAME:", image_filename)
 
         tfci.dump_tensor(model, [tensor_name], input_file, output_file)

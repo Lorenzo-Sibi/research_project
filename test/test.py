@@ -2,15 +2,9 @@ import os
 import sys
 import argparse
 import tensorflow as tf
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from PIL import Image
-# sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
+
 sys.path.append(os.path.join("/home/lorenzo-sibi/Scrivania/research_project"))
-
 from src import loader, visualize_data, utils
-
 
 def parse_args():
     parser = argparse.ArgumentParser("Testing functionalities...", )

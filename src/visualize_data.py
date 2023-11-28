@@ -111,10 +111,10 @@ def plot_tensor_fft_spectrum(tensor, log_scale=True, save_in="./"):
     for i in range(z):
         fft_results.append(np.fft.fft2(tensor[:, :, i]))
     fft_magnitude = np.fft.fftshift(np.mean(fft_results, axis=0))
-    fft_magnitude = np.abs(fft_magnitude)  # Calcola la magnitudine dell'FFT
+    fft_magnitude = np.abs(fft_magnitude)  # Calculate the FFt magnitude
 
-    # Plotta lo spettro dell'FFT
-    plt.imshow(np.log1p(fft_magnitude), cmap='viridis')  # Applica il logaritmo per una migliore visualizzazione
+    # Plot FFT's spectrum
+    plt.imshow(np.log(fft_magnitude), cmap='viridis')  # logaritmic scale
     plt.title(f'Tensor spectrum (FFT) {name}')
     plt.savefig(join(save_in, name))
 

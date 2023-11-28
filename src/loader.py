@@ -13,10 +13,16 @@ from src.utils import TensorType, TensorContainer
 # Setting global seed
 random.seed(RANDOM_SEED)
 
+def load_image(input_path):
+    "Load a single image from 'input_path'"
+    if not os.path.exists(input_path):
+        raise ValueError("Path not avaiable or doesn't exist")
+    image = Image.open(input_path)
+    return image
+
 def load_images_as_list(input_path, batch_size=0):
     if not os.path.exists(input_path):
-        print("Path not avaiable or doesn't exist")
-        return
+        raise ValueError("Path not avaiable or doesn't exist")
     print("Loading images...")
     images_set = [os.path.join(input_path, file) 
                   for file in os.listdir(input_path) 

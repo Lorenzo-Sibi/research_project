@@ -22,26 +22,51 @@ random.seed(RANDOM_SEED)
 def list_tensors(model):
    tfci.list_tensors(model)
 
-def dump_tensor_all(input_directory, output_directory, model, tensor_names:list):
+TENSORS_DICT = {
+    "hific": "hyperprior/entropy_model/conditional_entropy_model_3/add:0",
+    "ms2020": "analysis/layer_2/convolution:0",
+    "mbt218": "analysis/layer_2/convolution:0",
+    "bmshj2018":"analysis/layer_2/convolution:0",
+    "b2018": "analysis/layer_2/convolution:0"
+}
+
+
+def dump_tensor_all(input_directory, output_directory, models, one_image=False):
+    for model_class in models:
+        for variant in models[model_class]:
+            for model in models[model_class][variant]:
+                output_path = Path(output_directory, model_class, variant, model)
+                if not output_path.exists():
+                    output_path.mkdir(parents=True, exist_ok=True)
+                tensor_name = TENSORS_DICT[model_class]
+                print(f"MODEL CLASS: {model_class}\nMODEL: {model}\n\n")
+                if one_image:
+                    dump_tensor(input_directory, output_path, model, tensor_name)
+                else:
+                    dump_tensor_images(input_directory, output_path, model, tensor_name)
+                print("_"*100, "\n\n")
+
+def dump_tensor_images(input_directory, output_directory, model, tensor_name):
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)]
     n_images = len(image_filenames)
-    print(f"{n_images} founded. Start extraction...")
+    print(f"{n_images} founded. Start dumping tensors...")
     
     for i, image_filename in enumerate(image_filenames):
-        output_file = os.path.join(output_directory, Path(image_filename).stem + ".npz")
-        input_file = os.path.join(input_directory, image_filename)
+        output_file = Path(output_directory, Path(image_filename).stem + ".npz")
+        input_file = Path(input_directory, image_filename)
         print("FILENAME:", image_filename)
 
-        tfci.dump_tensor(model, tensor_names, input_file, output_file)
+        tfci.dump_tensor(model, [tensor_name], input_file, output_file)
         
         print(f"{i+1}/{n_images}")
-    print("Extraction completed.")
+    print("Dumping completed.")
 
-def dump_tensor(input_directory, output_directory, model, tensor_names:list):
+def dump_tensor(input_filename, output_directory, model, tensor_name):
     """Dumps the given tensors of an image from a model to .npz files."""
-    if not os.path.exists(output_directory):
-        os.mkdir(output_directory, mode=777)
-    tfci.dump_tensor(model, tensor_names, input_directory, output_directory)
+    if not output_directory.exists():
+        output_directory.mkdir(parents=True, exist_ok=True)
+    output_filename = Path(output_directory, Path(input_filename).stem + ".npz")
+    tfci.dump_tensor(model, [tensor_name], input_filename, output_filename)
 
 def compress(model, input_image, rd_parameter=None):
   """Compresses a PNG file to a PNG file"""

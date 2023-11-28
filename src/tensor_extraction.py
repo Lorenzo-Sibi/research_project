@@ -69,7 +69,20 @@ def dump_tensor(input_filename, output_directory, model, tensor_name):
     output_filename = Path(output_directory, Path(input_filename).stem + ".npz")
     tfci.dump_tensor(model, [tensor_name], input_filename, output_filename)
 
-def compress_all():
+def compress_all(input_directory, output_directory, models, one_image=False):
+    for i, model_class in enumerate(models):
+        for variant in models[model_class]:
+            for model in models[model_class][variant]:
+                output_path = os.path.join(output_directory, model_class, variant, model)
+                if not Path(output_path).exists():
+                    Path(output_path).mkdir(parents=True, exist_ok=True)
+                if one_image:
+                    output_path = os.path.join(output_path, Path(input_directory).stem + ".png")
+                    input_image = tfci.read_png(input_directory)
+                    compressed_image = compress(model, input_image)
+                    tfci.write_png(output_path, compressed_image)
+                else:
+                    compress_images(model, input_directory, output_path)
     pass
 
 def compress(model, input_image, rd_parameter=None):

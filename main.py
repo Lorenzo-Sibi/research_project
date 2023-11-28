@@ -77,7 +77,16 @@ def tensors_log(logdir='tensors_logs'):
                 
 
 def main(args):
-    if args.command == "compress":
+    
+    if args.command == "compress-all":
+        tensor_extraction.compress_all(
+            args.input_directory,
+            args.output_directory,
+            MODELS_DICT,
+            one_image=args.image
+        )
+
+    elif args.command == "compress":
         if args.one_image:
             tensor_extraction.compress(
                 args.model, 
@@ -145,6 +154,18 @@ def parse_args():
         title="commands",
         dest="command",
         help="invoke <command> -h for more information"
+    )
+
+    # 'compress-all' subcomand
+    compress_all_cmd = subparser.add_parser(
+        "compress-all",
+        description="Compress all the images in 'input_directory' (or just one if -i flag is active) for all models available"
+    )
+
+    compress_all_cmd.add_argument(
+        "-i", "--image",
+        action="store_true",
+        help="If active compress a single image with all models."
     )
 
     # 'compress' subcomand
@@ -248,7 +269,7 @@ def parse_args():
     )
     
 
-    for cmd in (compress_cmd, dump_all_cmd, dump_cmd, crop_cmd, filter_cmd):
+    for cmd in (compress_all_cmd, compress_cmd, dump_all_cmd, dump_cmd, crop_cmd, filter_cmd):
         cmd.add_argument(
             "input_directory",
             help="input directory"

@@ -24,10 +24,10 @@ def list_tensors(model):
 
 TENSORS_DICT = {
     "hific": "hyperprior/entropy_model/conditional_entropy_model_3/add:0",
-    "ms2020": "analysis/layer_2/convolution:0",
-    "mbt218": "analysis/layer_2/convolution:0",
+    "mbt2018": "analysis/layer_3/convolution:0",
     "bmshj2018":"analysis/layer_2/convolution:0",
-    "b2018": "analysis/layer_2/convolution:0"
+    "b2018": "analysis/layer_2/convolution:0",
+    #"ms2020": "analysis/layer_2/convolution:0",
 }
 
 
@@ -45,7 +45,7 @@ def dump_tensor_all(input_directory, output_directory, models, one_image=False):
                 else:
                     dump_tensor_images(input_directory, output_path, model, tensor_name)
                 print("_"*100, "\n\n")
-        print(f"PROCESS {(i+1)/ len(models)* 100}% COMPETED.")
+        print(f"PROCESS {(i+1)/ len(models)* 100}% COMPETED.\n")
 
 def dump_tensor_images(input_directory, output_directory, model, tensor_name):
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)]
@@ -69,6 +69,9 @@ def dump_tensor(input_filename, output_directory, model, tensor_name):
     output_filename = Path(output_directory, Path(input_filename).stem + ".npz")
     tfci.dump_tensor(model, [tensor_name], input_filename, output_filename)
 
+def compress_all():
+    pass
+
 def compress(model, input_image, rd_parameter=None):
   """Compresses a PNG file to a PNG file"""
   bitstring = tfci.compress_image(model, input_image, rd_parameter=rd_parameter)
@@ -84,7 +87,7 @@ def compress(model, input_image, rd_parameter=None):
   output_image, = receiver(*tensors)
   return output_image
 
-def compress_all(model, input_directory, output_directory, rd_parameter=None): 
+def compress_images(model, input_directory, output_directory, rd_parameter=None): 
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)] # es. [image1.png, image2.png, image3.png]
     n_images = len(image_filenames)
     print(f"{n_images} founded. Start compressing in images...")

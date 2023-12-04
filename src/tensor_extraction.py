@@ -76,6 +76,7 @@ def compress_all(input_directory, output_directory, models, one_image=False):
                 output_path = os.path.join(output_directory, model_class, variant, model)
                 if not Path(output_path).exists():
                     Path(output_path).mkdir(parents=True, exist_ok=True)
+                print(f"MODEL CLASS: {model_class}\nMODEL: {model}\n\n")
                 if one_image:
                     output_path = os.path.join(output_path, Path(input_directory).stem + ".png")
                     input_image = tfci.read_png(input_directory)
@@ -83,6 +84,7 @@ def compress_all(input_directory, output_directory, models, one_image=False):
                     tfci.write_png(output_path, compressed_image)
                 else:
                     compress_images(model, input_directory, output_path)
+        print(f"PROCESS {(i+1)/ len(models)* 100}% COMPETED.\n")
     pass
 
 def compress(model, input_image, rd_parameter=None):
@@ -97,13 +99,14 @@ def compress(model, input_image, rd_parameter=None):
     if t.dtype.is_floating and t.shape == (1,):
       tensors[i] = tf.squeeze(t, 0)
 
-  output_image, = receiver(*tensors)
+  output_image, = receiver(*tensors) # type: ignore
   return output_image
 
-def compress_images(model, input_directory, output_directory, rd_parameter=None): 
+def compress_images(model, input_directory, output_directory, rd_parameter=None, verbose=False): 
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)] # es. [image1.png, image2.png, image3.png]
     n_images = len(image_filenames)
-    print(f"{n_images} founded. Start compressing in images...")
+    if verbose:
+        print(f"{n_images} founded. Start compressing in images...")
     
     for i, image_filename in enumerate(image_filenames):
         output_file = os.path.join(output_directory, Path(image_filename).stem + ".png")
@@ -113,5 +116,7 @@ def compress_images(model, input_directory, output_directory, rd_parameter=None)
         compressed_image = compress(model, input_image, rd_parameter)
         tfci.write_png(output_file, compressed_image)
 
-        print(f"{i+1}/{n_images}")
-    print(f"Compression completed. {n_images} compressed.")
+        if verbose:
+            print(f"{i+1}/{n_images}")
+    if verbose:
+        print(f"Compression completed. {n_images} compressed.")

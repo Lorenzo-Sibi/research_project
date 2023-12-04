@@ -38,7 +38,7 @@ def load_images_as_list(input_path, batch_size=0):
     return image_list
 
 # Load an entire tensors batch from "directory" (.npz or .npy files) and return a list of narrays
-def load_from_directory(directory, batch_size, return_list=True):
+def load_from_directory(directory, batch_size=0, return_list=True):
     files = [file for file in os.listdir(directory) if file.endswith((".npz", ".npy"))]
     if batch_size is None or batch_size == 0:
         files_batch = files

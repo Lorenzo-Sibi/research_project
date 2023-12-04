@@ -8,8 +8,8 @@ from src import tensor_extraction
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "compression-master/models"))
 import tfci
 
-
-MODELS_DICT = MODELS_DICT = {
+# 67 models in total
+MODELS_DICT = {
     "hific": {
         "variants": ["hific-lo", "hific-mi", "hific-hi"],
     },

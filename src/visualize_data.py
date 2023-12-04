@@ -1,17 +1,12 @@
 from os.path import basename, splitext, join
 from os import listdir
-import argparse
 
 import tensorflow as tf
 import numpy as np
-import pandas as pd
+from pathlib import Path
 
 from src.utils import TensorContainer
 import matplotlib.pyplot as plt
-from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 
@@ -20,9 +15,80 @@ from src import loader, utils
 OPERATIONS = ['statistics-all', 'TSNE']
 COLORS = ["blue", "green", "red", "orange", "purple"]
 
-# Script per il plotting dei dati
+PLOT_DIR = "plots"
 
-def statistics_axis(tensor_list, axis=0, bins=40, output_path="./", title=None):
+# Data plots script
+
+"""
+Per utilizzare il comando statistics_all le cartelle devono essere strutturate in questo modo:
+
+main-directory
+    |- model_class (es. b2028)
+        |- variant1/ (es. gdn-128) 
+            ...
+        |- variant2/
+            |- model1/
+            |- model2/
+                | ... files.nps ...
+
+NON inserire la cartella di output all'interno della input_directory
+"""
+
+
+def statistics_all(input_directory, output_directory="/.", axis=0, bins=40):
+    input_directory = Path(input_directory)
+    output_directory = Path(output_directory)
+    print("OUTPUT_DIRECTORY", output_directory)
+    
+    # Itera sulle sottocartelle di main-directory
+    for model_class in input_directory.iterdir():
+        if model_class.is_dir():
+            model_class_name = model_class.name
+
+            # Crea la cartella principale per la classe del modello
+            class_output_path = Path(output_directory, model_class_name)
+            class_output_path.mkdir(parents=True, exist_ok=True)
+            print("CLASS OUTPUT PATH", class_output_path)
+            for variant in model_class.iterdir():
+                if variant.is_dir():
+                    variant_name = variant.name
+
+                    # Crea la cartella per la variante
+                    variant_output_path = class_output_path / variant_name
+                    variant_output_path.mkdir(parents=True, exist_ok=True)
+
+                    for model_folder in variant.iterdir():
+                        if model_folder.is_dir():
+                            # Ottieni la lista dei tensori dalla cartella "model_folder"
+                            tensor_list = load_tensors_from_model(model_folder)
+                            model_name = model_folder.name
+                            print(model_folder)
+                            print(f"Processing {model_class_name}/{variant_name}/{model_name}...")
+
+                            # Calcolo delle statistiche e salvataggio nella sottocartella
+                            title = f"{model_name}_stats"
+                            statistics(tensor_list, axis=axis, bins=bins, output_path=str(variant_output_path), title=title)
+                        else:
+                            print("Folder structure not respected!")
+                            return
+    print("Processing completed.")
+    return
+
+
+"""
+Possible refactor implementation for load_from_directory (loader.py module)
+"""
+def load_tensors_from_model(model_path): 
+    # Carica i tensori dalla cartella "model"
+    tensor_list = []
+    for file_path in model_path.glob("*.npz"):
+        with np.load(file_path) as data:
+            for _, item  in data.items():
+                tensor_list.append(item)
+    return tensor_list
+
+
+def statistics(tensor_list, axis=0, bins=40, output_path="./", title=None):
     if not title:
         title = 'statistic_indexes'
     
@@ -53,6 +119,8 @@ def statistics_axis(tensor_list, axis=0, bins=40, output_path="./", title=None):
 
         axis_stats = []
         for tensor in tensor_list:
+            if isinstance(tensor, TensorContainer):
+                tensor = tensor.get_tensor()
             if not isinstance(tensor, np.ndarray):
                 tensor = tensor.numpy()
             axis_stat = func(tensor, axis=axis) # Return an array of ndim elements (1 element if axis == 0)
@@ -97,12 +165,15 @@ def plot_latent_representation(tensor, output_path=None, cmap="grey", name="unkn
 
 def plot_latent_representation_all(input_directory, output_directory):
     latents_list = loader.load_tensors_as_list(input_directory)
-    for i, laten_space in enumerate(latents_list):
-        print(f"Plotting {i}/{len(latents_list)}")
+    for i, laten_space in enumerate(latents_list): # type: ignore
+        print(f"Plotting {i}/{len(latents_list)}") # type: ignore
         plot_latent_representation(laten_space, output_path=output_directory)
 
-def plot_tensor_fft_spectrum(tensor, log_scale=True, save_in="./"):
-    name = "unknown"
+def plot_tensor_fft_spectrum(tensor, log_scale=True, save_in="./", title = None, name=None):
+    if not name:
+        name = "unknown"
+    if not title:
+        title = f"Tensor spectrum of {name}"
     if isinstance(tensor, TensorContainer):
         name = tensor.get_name()
         tensor = tensor.get_tensor()
@@ -115,36 +186,6 @@ def plot_tensor_fft_spectrum(tensor, log_scale=True, save_in="./"):
 
     # Plot FFT's spectrum
     plt.imshow(np.log(fft_magnitude), cmap='viridis')  # logaritmic scale
-    plt.title(f'Tensor spectrum (FFT) {name}')
+    plt.title(title)
     plt.savefig(join(save_in, name))
-
-def plot_pca(images_lists, labels, n_components=2):
-    pca_results = []
-    for image_list in images_lists:
-        matrix = np.squeeze(np.array([np.array(image).flatten().reshape(1, -1) for image in image_list]))
-        print("MATRIX SHAPE", matrix.shape)
-        pca = PCA(n_components=2, random_state=42)
-        pipe = Pipeline([('scaler', StandardScaler()), ('pca', pca)])
-        pca_results.append(pipe.fit_transform(matrix))
-    for pca_result, label in zip(pca_results, labels):
-        plt.scatter(pca_result[:, 0], pca_result[:, 1], label=label)
-        plt.xlabel('First Main Component')
-        plt.ylabel('Second Main Component')
-    plt.legend()
-    plt.show()
-
-def plot_tsne(images_lists, labels, n_components=2, perplexity=5):
-    tsne_results = []
-    for image_list in images_lists:
-        matrix = np.squeeze(np.array([np.array(image).flatten().reshape(1, -1) for image in image_list]))
-        print("MATRIX SHAPE", matrix.shape)
-        tsne = TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
-        pipe = Pipeline([('scaler', StandardScaler()), ('tsne', tsne)])
-        tsne_results.append(tsne.fit_transform(matrix))
-    for tsne_result, label in zip(tsne_results, labels):
-        print("SHAPE RESULT", tsne_result.shape)
-        plt.scatter(tsne_result[:], tsne_result[:], label=label)
-        plt.xlabel('First Main Component')
-        plt.ylabel('Second Main Component')
-    plt.legend()
-    plt.show()
+    return

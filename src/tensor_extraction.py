@@ -1,12 +1,9 @@
 import os
 import sys
 import random
-from exceptiongroup import catch
-import numpy as np
 from pathlib import Path
 import tensorflow as tf
 import tensorflow_compression as tfc
-from main import MODELS_DICT
 
 from src import *
 

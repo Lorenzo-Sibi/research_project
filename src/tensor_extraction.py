@@ -46,8 +46,8 @@ def dump_tensor_all(input_directory, output_directory, models, one_image=False):
                     dump_tensor(input_directory, output_path, model, tensor_name)
                 else:
                     dump_tensor_images(input_directory, output_path, model, tensor_name)
-                print("_"*100, "\n\n")
-        print(f"PROCESS {(i+1)/ len(models)* 100}% COMPETED.\n")
+                print("\n\n")
+        print(f"TOTAL PROCESS {(i+1)/ len(models)* 100}% COMPETED.\n\n")
 
 def dump(input_path, output_path, model):
     try:
@@ -97,12 +97,13 @@ def dump_tensor_images(input_directory, output_directory, model, tensor_name):
     for i, image_filename in enumerate(image_filenames):
         output_file = Path(output_directory, Path(image_filename).stem + ".npz")
         input_file = os.path.join(input_directory, image_filename)
-        print("FILENAME:", image_filename)
 
         tfci.dump_tensor(model, [tensor_name], input_file, output_file)
         
-        print(f"{i+1}/{n_images}")
-    print("Dumping completed.")
+        sys.stdout.write(f"\r{image_filename}: {i+1}/{n_images}")
+        sys.stdout.flush()
+    sys.stdout.write(f"\rDumping completed for {model}")
+    sys.stdout.flush()
 
 def dump_tensor(input_filename, output_directory, model, tensor_name):
     """Dumps the given tensors of an image from a model to .npz files."""

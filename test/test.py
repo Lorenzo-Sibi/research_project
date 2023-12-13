@@ -3,10 +3,13 @@ import sys
 import argparse
 import tensorflow as tf
 from PIL import Image
+from pathlib import Path
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.join("/home/lorenzo-sibi/Scrivania/research_project"))
 from src import loader, visualize_data, utils, preprocess
+
+TEST_REAL_IMAGES_FOLDER = Path(Path(__file__).parent, "test_images", "real")
 
 def parse_args():
     parser = argparse.ArgumentParser("Testing functionalities...", )

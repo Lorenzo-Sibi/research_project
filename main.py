@@ -2,11 +2,13 @@ import argparse
 import os
 import sys
 
+from pathlib import Path
 from src import preprocess
 from src import tensor_extraction
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "compression-master/models"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "compression-master/models"))
 import tfci
+from src import MODELS_LATENTS_DICT
 
 # 67 models in total
 MODELS_DICT = {
@@ -35,7 +37,10 @@ MODELS_DICT = {
     # },
 }
 TENSORS_DICT = {
-    "hific": "hyperprior/entropy_model/conditional_entropy_model_3/add:0",
+    "hific-lo": "hyperprior/entropy_model/conditional_entropy_model_3/add:0",
+    "hific-hi": "hyperprior/entropy_model/conditional_entropy_model_3/add:0",
+    "hific-lo": "hyperprior/entropy_model/conditional_entropy_model_3/add:0",
+    
     "mbt2018": "analysis/layer_3/convolution:0",
     "bmshj2018":"analysis/layer_2/convolution:0",
     "b2018": "analysis/layer_2/convolution:0",
@@ -89,9 +94,8 @@ def main(args):
     elif args.command == "compress":
         if args.one_image:
             tensor_extraction.compress(
-                args.model, 
+                args.model,
                 args.input_directory, 
-                args.output_directory, 
                 args.rd_parameter
             )
         else:
@@ -132,24 +136,13 @@ def main(args):
         )
 
     elif args.command == "dump":
-        if args.image:
-            tensor_extraction.dump_tensor(
-                args.input_directory, 
-                args.output_directory, 
-                args.model, 
-                args.tensor[0],
-            )
-        else:
-            tensor_extraction.dump_tensor_all_images(
-                args.input_directory, 
-                args.output_directory, 
-                args.model, 
-                args.tensor[0]
-            )
+        input_path = Path(args.input_directory)
+        output_path = Path(args.output_directory)
+        tensor_extraction.dump(input_path, output_path, args.model)
 
 def parse_args():
     parser = argparse.ArgumentParser()
-
+    
     subparser = parser.add_subparsers(
         title="commands",
         dest="command",
@@ -207,7 +200,7 @@ def parse_args():
     # 'dump' subcomand
     dump_cmd = subparser.add_parser(
         "dump",
-        description="dump a tensor given an input image or a directory for a specific model and tensor. If --image flag is enabled, only the given image will be dumped"
+        description="dump the latent space tensor given an input image or a directory for a specific model and tensor. If --image flag is enabled, only the given image will be dumped"
     )
     dump_cmd.add_argument(
         "-i", "--image",
@@ -217,13 +210,8 @@ def parse_args():
 
     dump_cmd.add_argument(
         "model",
-        help="Specify the name of the model"
-    )
-    dump_cmd.add_argument(
-        "-t", "--tensor",
-        nargs=1,
-        required=True,
-        help="The name of the tensor to extract"
+        help="Specify the name of the model",
+        choices=MODELS_LATENTS_DICT.keys()
     )
 
     # 'tensors-all' subcommand.

@@ -1,10 +1,12 @@
 import os
 import sys
 import random
+from exceptiongroup import catch
 import numpy as np
 from pathlib import Path
 import tensorflow as tf
 import tensorflow_compression as tfc
+from main import MODELS_DICT
 
 from src import *
 
@@ -30,6 +32,9 @@ TENSORS_DICT = {
     #"ms2020": "analysis/layer_2/convolution:0",
 }
 
+"""
+LATENT SPACE EXTRACTON IMPLEMENTATION
+"""
 
 def dump_tensor_all(input_directory, output_directory, models, one_image=False):
     for i, model_class in enumerate(models):
@@ -46,6 +51,46 @@ def dump_tensor_all(input_directory, output_directory, models, one_image=False):
                     dump_tensor_images(input_directory, output_path, model, tensor_name)
                 print("_"*100, "\n\n")
         print(f"PROCESS {(i+1)/ len(models)* 100}% COMPETED.\n")
+
+def dump(input_path, output_path, model):
+    try:
+        if input_path.is_dir():
+            dump_from_dir(input_path, output_path, model)
+        else:
+            dump_from_file(input_path, output_path, model)
+    except Exception as err:
+        print(err)
+        return
+    
+def dump_from_dir(input_directory, output_directory, model):
+    if not input_directory.is_dir():
+        raise ValueError(f"Error. {input_directory} is not a directory.")
+    if not output_directory.is_dir():
+        raise ValueError(f"Error. {output_directory} is not a directory.")
+
+    for filename in input_directory.iterdir():
+        print(filename)
+        if not filename.is_file() or (filename.is_file() and filename.suffix not in (".png")):
+            continue
+        dump_from_file(filename, output_directory, model)
+    return
+
+def dump_from_file(input_path, output_path, model):
+    if not input_path.is_file():
+        raise ValueError(f"Error. {input_path} is not a file.")
+    if input_path.suffix not in (".png"):
+        raise ValueError(f"Error. {input_path.suffix} is not compatible. PNG files are the only compatible.")
+    if not output_path.is_dir():
+        raise ValueError(f"Error. {output_path} is not a directory.")
+    
+    output_filename = Path(output_path, input_path.stem, ".npz")
+    print(MODELS_LATENTS_DICT[model])
+    tensor_name = MODELS_LATENTS_DICT[model]
+    
+    tfci.dump_tensor(model, [tensor_name], input_path, output_filename)
+
+        
+
 
 def dump_tensor_images(input_directory, output_directory, model, tensor_name):
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)]
@@ -68,6 +113,11 @@ def dump_tensor(input_filename, output_directory, model, tensor_name):
         output_directory.mkdir(parents=True, exist_ok=True)
     output_filename = Path(output_directory, Path(input_filename).stem + ".npz")
     tfci.dump_tensor(model, [tensor_name], input_filename, output_filename)
+
+
+"""
+COMPRESSION IMPLEMENTATION
+"""
 
 def compress_all(input_directory, output_directory, models, one_image=False):
     for i, model_class in enumerate(models):

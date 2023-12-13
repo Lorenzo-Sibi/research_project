@@ -197,7 +197,7 @@ def decompress(input_file, output_file):
   for i, t in enumerate(tensors):
     if t.dtype.is_floating and t.shape == (1,):
       tensors[i] = tf.squeeze(t, 0)
-  output_image, = receiver(*tensors)
+  output_image, = receiver(*tensors) # type: ignore
   write_png(output_file, output_image)
 
 

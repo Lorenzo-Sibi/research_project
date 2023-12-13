@@ -7,7 +7,6 @@ from pathlib import Path
 import tensorflow as tf
 import numpy as np
 import pandas as pd
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 random.seed(RANDOM_SEED)
 
@@ -17,21 +16,85 @@ class TensorType(enum.Enum):
 
 class TensorContainer:
     def __init__(self, tensor, name:str, tensor_type:TensorType):
-        self.tensor = tensor
-        self.name = name
-        self.tensor_type = tensor_type
+        self.__tensor = tensor
+        self.__name = name
+        self.__tensor_type = tensor_type
+    
+    @property
+    def tensor(self):
+        return self.__tensor
+    
+    @property
+    def name(self):
+        return self.__name
+    
+    @property
+    def dtype(self):
+        return self.__tensor.dtype
+    
+    @property
+    def ttype(self):
+        return self.__tensor_type
 
+    @property
+    def shape(self):
+        return self.__tensor.shape
+
+    @property
+    def ndim(self):
+        return self.__tensor.ndim
+    
+    @staticmethod
+    def convert(tensor_container, ttype):
+        if tensor_container.ttype == ttype:
+            return
+        else:
+            if(ttype == TensorType.NP_TENSOR):
+                tensor_container.np_tensor()
+            elif(ttype == TensorType.TF_TENSOR):
+                tensor_container.tf_tensor()
+    
+    def squeeze(self):
+        if self.ttype == TensorType.NP_TENSOR:
+            self.__tensor = np.squeeze(self.__tensor)
+        elif self.ttype == TensorType.TF_TENSOR:
+            self.__tensor = tf.squeeze(self.__tensor)
+    
     def get_tensor(self):
-        return self.tensor
+        return self.__tensor
 
     def get_name(self):
-        return self.name
+        return self.__name
 
     def get_tensor_type(self):
-        return self.tensor_type
+        return self.__tensor_type
+    
+    def np_tensor(self):
+        if self.__tensor_type == TensorType.NP_TENSOR:
+            return
+        assert isinstance(self.__tensor, tf.Tensor)
+        
+        self.__tensor_type = TensorType.NP_TENSOR
+        self.__dtype = self.__tensor.dtype
+        self.__shape = self.__tensor.shape
+        self.__tensor = self.__tensor.numpy()
+        
+    def tf_tensor(self):
+        if self.__tensor_type == TensorType.TF_TENSOR:
+            return
+        tensor = self.__tensor
+        assert isinstance(tensor, np.ndarray)
+        
+        self.__tensor = tf.convert_to_tensor(tensor)
+        self.__tensor_type = TensorType.TF_TENSOR
+        self.__dtype = self.__tensor.dtype
+        self.__shape = self.__tensor.shape
+    
+
     
     def __str__(self):
-      return f'{self.tensor}, name: {self.name}, tensor_type: {self.tensor_type}'
+      return f'{self.tensor}, name: {self.name}, tensor_type: {self.__tensor_type}'
+
 
 def convert_to_tensor_list(tensor_container_list:list, tensor_type:TensorType=TensorType.NP_TENSOR):
     return [tensor_c.tensor for tensor_c in tensor_container_list]
@@ -42,31 +105,6 @@ def convert_to_tf(tensors:list):
         tensor_c.tensor = tf.convert_to_tensor(tensor_c.get_tensor())
         tensor_c.tensor_type = TensorType.TF_TENSOR
     return
-
-def create_labeled_dataset(image_folder, label, target_size=(64, 64), batch_size=4, shuffle=True):
-    # Crea un generatore di dati utilizzando tf.data
-
-    data_generator = ImageDataGenerator(rescale=1./255)
-    data_generator = data_generator.flow_from_directory(
-        image_folder,
-        target_size=target_size,
-        batch_size=batch_size,
-        class_mode='categorical',
-        shuffle=shuffle,
-        classes=[label]
-    )
-    print("DATA GENERATOR:", data_generator)
-    # Crea un dataset a partire dal generatore di dati
-    dataset = tf.data.Dataset.from_generator(
-        lambda: data_generator,
-        output_signature=(
-            tf.TensorSpec(shape=(batch_size, target_size[0], target_size[1], 3), dtype=tf.float32),
-            tf.TensorSpec(shape=(batch_size, 1), dtype=tf.float32)
-        )
-    )
-    # Espandi le dimensioni del tensore di dati per avere la forma corretta
-    #dataset = dataset.map(lambda x, y: (tf.squeeze(x, axis=1), y))
-    return dataset
 
 def create_image_dataframe(image_folder, label):
     image_data = []

@@ -1,3 +1,4 @@
+from multiprocessing import Value
 import os
 import random
 import cv2
@@ -9,10 +10,13 @@ from pathlib import Path
 from src import *
 from src import loader
 
+import matplotlib.pyplot as plt
+
+
 HIGH_PASS_KERNEL = np.array([
-    [0.0, -1.0, 0.0], 
-    [-1.0, 4.0, -1.0],
-    [0.0, -1.0, 0.0]
+    [-1.0, -1.0, -1.0],
+    [-1.0, 8.0, -1.0],
+    [-1.0, -1.0, -1.0]
 ])
 
 random.seed(RANDOM_SEED)
@@ -38,8 +42,9 @@ def crop_all(input_directory, output_directory, target_width, target_height, for
     if not os.path.exists(input_directory):
         print("Input directory doesn't exist!")
         return
-    image_list = loader.load_images_as_list(input_directory)
     try:
+        image_list = loader.load_images_as_list(input_directory)
+        
         check_sizes(image_list, target_width, target_height)
         print("cropping...")
         for image in image_list:
@@ -50,25 +55,19 @@ def crop_all(input_directory, output_directory, target_width, target_height, for
         print(e)
     print("Cropping completed.")
 
-def high_pass_filter_conv2D(image, kernel=HIGH_PASS_KERNEL):
+def highpass(image_array, kernel=HIGH_PASS_KERNEL):
     kernel = kernel / (np.sum(kernel) if np.sum(kernel) != 0 else 1)
-    if not isinstance(image, (list, np.ndarray, pd.Series)):
-        image = np.array(image)
-    image = np.array(image)
-    # Filter the source image
-    image_flt = cv2.filter2D(image, -1, kernel)
+    image_flt = cv2.filter2D(image_array, -1, kernel)
 
     return image_flt
 
 def filter_image_dir(input_filename, output_directory=None):
     image = Image.open(input_filename)
     filename = Path(image.filename).stem or "unknown"
-    image_flt = high_pass_filter_conv2D(image) # Is an array-like
-    if not output_directory:
-        return Image.fromarray(image_flt)
-    else:
+    image_flt = highpass(image) # Is an array-like
+    if output_directory:
         cv2.imwrite((os.path.join(output_directory, f"{filename}.png")), image_flt)
-        return Image.fromarray(image_flt)
+    return Image.fromarray(image_flt)
 
 def filter_images(input_directory, output_directory):
     image_list = loader.load_images_as_list(input_directory)
@@ -77,7 +76,7 @@ def filter_images(input_directory, output_directory):
     filtered_images = []
     for i, image in enumerate(image_list):
         filename = Path(image.filename).stem or "unknown"
-        image_flt = high_pass_filter_conv2D(image) # An array-like
+        image_flt = highpass(image) # An array-like
         filtered_images.append(Image.fromarray(image_flt))
         cv2.imwrite((os.path.join(output_directory, f"{filename}.png")), image_flt)
         print(f"{filename}.png {i+1}/{len(image_list)}")
@@ -104,16 +103,92 @@ def esitmated_fingerprint(input_directory):
     However, a Laplacian filter (3x3 kernel) is used as denoising filter.
 
     Args:
-        input_directory (string): the director containing all the images
+        input_directory (pathlib.Path): the director containing all the images
 
     Returns:
-        numpy.ndarray: _description_
+        estimated_fingerprint (ndarray)
     """
     image_list = loader.load_images_as_list(input_directory)
     N = len(image_list)
+    fft_spectrum_sum
     sum = np.zeros(np.array(image_list[0]).shape)
     for image in image_list:
-        noise_res = noise_residual(image, high_pass_filter_conv2D)
-        sum += noise_res
+        noise_res = noise_residual(image, highpass)
+        # Compute fft spectrum on noise_res
+        fft_spectrum = compute_fft_spectrum(noise_res)
+        fft_spectrum_sum += fft_spectrum
     
-    return sum / N
+    esitmated_fingerprint = sum / N
+    return esitmated_fingerprint
+
+#################################################################
+
+def fft2d(image_array):
+    assert image_array.ndim == 2, f"Wrong number of dimensions: {image_array.ndim} instead of 2."
+    
+    image_array = np.fft.fft2(image_array)
+    image_array = np.fft.fftshift(image_array)
+    return image_array
+
+def array_fft_spectrum(array, filter_fnc=None, epsilon=1e-12):
+    """
+    Description: 
+        Compute the magnitude spectrum of a SINGLE array and return it as ndarray.
+        The array spectrum is calculated as the average over the 3 channels RGB.
+        If filter_fnc is None, no filter is applied to the array.
+    Args:
+        array (ndarray)
+        filter_fnc (function)
+        epsilon (float)
+    Return:
+        magnitude spectrum (ndarray)
+    """
+    array = array / 255.
+    assert array.ndim == 3, f"Wrong number of dimensions: {array.ndim} instead of 3."
+
+    for channel in range(array.shape[2]):
+        
+        img = array[:, :, channel]
+        if filter_fnc:
+            img = filter_fnc(img)
+        
+        fft_img = fft2d(img)
+        fft_img = np.log(np.abs(fft_img) + epsilon)
+        
+        fft_min = np.min(fft_img)
+        fft_max = np.max(fft_img)
+        
+        if (fft_max - fft_min) > 0:
+            fft_img = np.array((fft_img - fft_min) / (fft_max))
+        else:
+            print("Unexpected behavior. Maximum value less than minimum value. Potential division by zero!")
+            fft_img = np.array((fft_img - fft_min) / ((fft_max - fft_min) + np.finfo(float).eps))
+
+        array[:, :, channel] = fft_img
+    return np.average(array, axis=2) # in this method is obtained the specrum of the grayscale image
+
+def average_fft(input_path):
+    if input_path.is_file():
+        raise ValueError("Input path is a file, not a directory.")
+    
+    fft = []
+    for filename in input_path.iterdir():
+        if filename.is_dir():
+            continue
+        if filename.suffix in IMAGE_SUPPORTED_EXTENSIONS:
+            image = loader.load_image(filename)
+        elif filename.suffix in TENSOR_SUPPORTED_EXTENSIONS:
+            image = loader.load_tensor(filename)
+            image = image.tensor.squeeze()
+            image = image * 255.
+            print(image.shape)
+            
+        else:
+            raise ValueError("Error. File extension not supported")
+        
+        image = np.array(image)
+        fft_img_spectrum = array_fft_spectrum(image, highpass)
+        fft.append(fft_img_spectrum)
+        
+    print(f"{len(fft)} images processed.")
+    return np.average(np.array(fft), axis=0)

@@ -6,6 +6,7 @@ from src.utils import TensorContainer
 from PIL import Image, ImageOps
 
 from src import loader, utils, preprocess
+from src.loader import Loader
 
 OPERATIONS = ['statistics-all', 'TSNE']
 COLORS = ["blue", "green", "red", "orange", "purple"]
@@ -178,150 +179,37 @@ def plot_spectrum(input_path, output_path):
         (single files, or directory containing multiple files).
     """
     if not output_path.is_dir():
-        raise TypeError("Output path is not a directory.")
+        raise TypeError(f"Output path {output_path} is not a directory.")
     
-    if input_path.is_file():
-        func = None
+    if input_path.is_file(): # handle the case of single file
         
-        if input_path.suffix in IMAGE_SUPPORTED_EXTENSIONS:
-            func = plot_image_fft_spectrum
-        elif input_path in TENSOR_SUPPORTED_EXTENSIONS:
-            func = plot_tensor_fft_spectrum
+        if input_path.suffix in IMAGE_SUPPORTED_EXTENSIONS or input_path.suffix in TENSOR_SUPPORTED_EXTENSIONS:
+            plot_single_fft_spectrum(input_path, output_path)
         else:
             raise ValueError(f"Given input filename's extension {input_path.suffix} is not compatible. ")
         
-        func(input_path, output_path)
-    else:
+    else:                   # handle the case of directory
         for input_filename in input_path.iterdir():
-            if input_filename.suffix in IMAGE_SUPPORTED_EXTENSIONS:
-                plot_image_fft_spectrum(input_filename, output_path)
-            elif input_filename.suffix in TENSOR_SUPPORTED_EXTENSIONS:
-                plot_tensor_fft_spectrum(input_filename, output_path)
+            if input_filename.suffix in IMAGE_SUPPORTED_EXTENSIONS or input_path.suffix in TENSOR_SUPPORTED_EXTENSIONS:
+                plot_single_fft_spectrum(input_filename, output_path)
 
-def plot_tensor_fft_spectrum(input_path, output_path):
-    """
-    Description:
-        This function plots the FFT's spectrum of a 3D tensor.
-    Args:
-        input_path (pathlib.Path)
-        output_path (pathlib.Path)
-    Returns:
-        None
-    
-    Raises:
-        TypeError: If the tensor is not a TensorContainer object
-        ValueError: If the tensor is not 3D
-    
-    """
-    if not input_path.is_file():
-        raise ValueError("Input filename given is not a file.")
-    if not output_path.is_dir():
-        raise ValueError("Output path is not a directory.")
-    
-    tensor = loader.load_tensor(input_path)
-    tensor.squeeze()
-    magnitude_spectrum_np = tensor_fft_spectrum(tensor)
-
-    plt.imshow(magnitude_spectrum_np, cmap="viridis")
-    plt.title(f'Magnitude Spectrum of {input_path.name}'), plt.xticks([]), plt.yticks([])
-    plt.savefig(output_path / f"{input_path.stem}_spectrum.png")
-    plt.close("all")
-    return
-
-def tensor_fft_spectrum(tensor): 
-    """
-    Description:
-        This function computes the FFT's spectrum of a 3D tensor given as TensorContainer
-        It returns a 2D ndarray containing the magnitude spectrum.
-    Args:
-        tensor (TensorContainer)
-    Returns:
-        magnitude spectrum (ndarray)
-    """
-    tensor = tensor.tensor
-    assert tensor.ndim == 3, f"Wrong tensor number of dimension: {tensor.ndim} instead of 3."
-    
-    x, y, channel = tensor.shape
-    tensor_graycale = np.mean(tensor, axis=2)
-    
-    fft_complex = np.fft.fft2(tensor_graycale)
-    fft_shift = np.fft.fftshift(fft_complex) # shift to center
-    
-    magnitude_spectrum = 20*np.log(np.abs(fft_shift))
-    
-    return magnitude_spectrum
-
-def image_fft_spectrum(image):
-    """
-    Description: 
-        Compute the magnitude spectrum of an image and return it as ndarray
-    Args:
-        image (PIL.Image)
-    Return:
-        magnitude spectrum (ndarray)
-    """
-    image = np.array(image) / 255.
-    
-    for channel in range(image.shape[2]):
-        
-        img = image[:, :, channel]
-        img = preprocess.highpass(img)
-        fft_img = np.fft.fft2(img)
-        fft_shift = np.fft.fftshift(fft_img) # shift to center
-        fft_img = np.log(np.abs(fft_shift))
-        fft_min = np.percentile(fft_img, 5)
-        fft_max = np.percentile(fft_img, 95)
-        if (fft_max - fft_min) <= 0:
-            print('ma cosa...')
-            fft_img = np.array((fft_img - fft_min) / ((fft_max - fft_min) + np.finfo(float).eps))
-        else:
-            fft_img = np.array((fft_img - fft_min) / (fft_max - fft_min))
-        
-        # # fft_img[fft_img < -1] = -1
-        # fft_img[fft_img > 1] = 1
-        image[:, :, channel] = fft_img
-    return image
-    
-    # fft_complex = np.fft.fft2(image)
-    
-    # fft_shift = np.fft.fftshift(fft_complex) # shift to center
-    # magnitude_spectrum = 20*np.log(np.abs(fft_shift))
-    
-    # return magnitude_spectrum
-
-def plot_image_fft_spectrum(input_path, output_path):
-    """
-    Description:
-        Plot the spectrum of the image given in 'input_path' and save it in 'output_path'.
-        The spectrum of the image is obtained through fft module of Numpy. The image is first 
-        converted to grayscale.
-    Args:
-        input_path (pathlib.Path)
-        output_path (pathlib.Path)
-    Retun:
-        None
-    """
+def plot_single_fft_spectrum(input_path, output_path):
     if not input_path.is_file():
         raise TypeError("Input filename given is not a file.")
     if not output_path.is_dir():
         raise TypeError("Output path is not a directory.")
     
-    image = Image.open(input_path)
-    assert image.mode == "RGB", "Image opening mode should be 'RGB'"
+    array = Loader.load(input_path) # it automatically load the file as array
+    if isinstance(array, TensorContainer):
+        array = array.tensor
+    array = np.array(array)
     
-    magnitude_spectrum_np = image_fft_spectrum(image)
-    image = ImageOps.grayscale(image)
-    print(magnitude_spectrum_np)
+    fft_spectrum = preprocess.array_fft_spectrum(array)
     
-    magnitude_spectrum_np = np.mean(magnitude_spectrum_np, axis=2)
-    print(magnitude_spectrum_np)
-    
-    im = plt.imshow(magnitude_spectrum_np, cmap="viridis")
-    plt.colorbar(im)
+    plt.imshow(fft_spectrum, cmap="viridis")
     plt.title(f'Magnitude Spectrum of {input_path.name}'), plt.xticks([]), plt.yticks([])
     plt.savefig(output_path / f"{input_path.stem}_spectrum.png")
     plt.close("all")
-    return
 
 def plot_average_spectrum(input_directory, output_directory, title=None):
     if not output_directory.is_dir():

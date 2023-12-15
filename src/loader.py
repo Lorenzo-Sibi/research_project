@@ -1,4 +1,5 @@
-import os
+from multiprocessing import Value
+from pathlib import Path 
 from os.path import basename, splitext
 import random
 from PIL import Image
@@ -14,6 +15,23 @@ random.seed(42)
 class Loader():
     def __init__(self):
         pass
+    
+    @staticmethod
+    def load(input_path):
+        if isinstance(input_path, str):
+            input_path = Path(input_path)
+        
+        if input_path.is_file():
+            # Single file mode
+            if input_path.suffix in IMAGE_SUPPORTED_EXTENSIONS:
+                return load_image(input_path)
+            elif input_path.suffix in TENSOR_SUPPORTED_EXTENSIONS:
+                return load_tensor(input_path)
+            
+        elif input_path.is_dir():
+            pass
+        else:
+            raise ValueError(f"Error. {input_path} unknown file-type.")
 
 def load_image(input_path):
     "Load a single image from 'input_path'"

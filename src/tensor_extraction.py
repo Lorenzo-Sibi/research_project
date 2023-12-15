@@ -150,11 +150,11 @@ def compress(model, input_image, rd_parameter=None):
   output_image, = receiver(*tensors) # type: ignore
   return output_image
 
-def compress_images(model, input_directory, output_directory, rd_parameter=None, verbose=False): 
+def compress_images(model, input_directory, output_directory, rd_parameter=None, ): 
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)] # es. [image1.png, image2.png, image3.png]
     n_images = len(image_filenames)
-    if verbose:
-        print(f"{n_images} founded. Start compressing in images...")
+    
+    print(f"{n_images} founded. Start compressing in images...")
     
     for i, image_filename in enumerate(image_filenames):
         output_file = os.path.join(output_directory, Path(image_filename).stem + ".png")
@@ -164,7 +164,9 @@ def compress_images(model, input_directory, output_directory, rd_parameter=None,
         compressed_image = compress(model, input_image, rd_parameter)
         tfci.write_png(output_file, compressed_image)
 
-        if verbose:
-            print(f"{i+1}/{n_images}")
-    if verbose:
-        print(f"Compression completed. {n_images} compressed.")
+        sys.stdout.write(f"\r{i+1}/{n_images}")
+        sys.stdout.flush()
+        
+    sys.stdout.write(f"\rCompression completed. {n_images} compressed.")
+    sys.stdout.flush()
+    

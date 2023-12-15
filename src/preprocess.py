@@ -124,6 +124,14 @@ def esitmated_fingerprint(input_directory):
 #################################################################
 
 def fft2d(image_array):
+    """_summary_
+
+    Args:
+        image_array (ndarray): The input image array. It should have 2 dimensions.
+
+    Returns:
+        ndarray: The complex-valued two-dimensional Fourier Transform of the input image array.
+    """
     assert image_array.ndim == 2, f"Wrong number of dimensions: {image_array.ndim} instead of 2."
     
     image_array = np.fft.fft2(image_array)
@@ -169,7 +177,7 @@ def array_fft_spectrum(array, filter_fnc=None, epsilon=1e-12):
 
 def average_fft(input_path):
     if input_path.is_file():
-        raise ValueError("Input path is a file, not a directory.")
+        raise ValueError(f"Input path {input_path} is a file, not a directory.")
     
     fft = []
     for filename in input_path.iterdir():
@@ -181,7 +189,6 @@ def average_fft(input_path):
             image = loader.load_tensor(filename)
             image = image.tensor.squeeze()
             image = image * 255.
-            print(image.shape)
             
         else:
             raise ValueError("Error. File extension not supported")

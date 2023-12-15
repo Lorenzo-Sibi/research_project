@@ -52,7 +52,7 @@ def spectrum_all(input_directory, output_directory):
                             # visualize_data.plot_tensor_fft_spectrum(fingerprint, save_in=str(variant_output_path), name=model_name)
                             for input_filename in model_folder.iterdir():
                                 if input_filename.suffix in (".png", ".jpeg", ".jpg"):
-                                    visualize_data.plot_image_fft_spectrum(input_filename, variant_output_path)
+                                    visualize_data.plot_single_fft_spectrum(input_filename, variant_output_path)
                                     break
                         else:
                             print("Folder structure not respected!")
@@ -73,6 +73,7 @@ def main(args):
             spectrum_all(input_directory, output_directory)
         elif args.type == "average-spectrum":
             visualize_data.plot_all_average_spectrum(input_directory, output_directory)
+            
     elif args.command == "plot":
         if args.type == "spectrum":
             visualize_data.plot_spectrum(input_directory, output_directory)

@@ -22,14 +22,20 @@ class Loader():
             input_path = Path(input_path)
         
         if input_path.is_file():
-            # Single file mode
+            # Single-file mode
             if input_path.suffix in IMAGE_SUPPORTED_EXTENSIONS:
                 return load_image(input_path)
             elif input_path.suffix in TENSOR_SUPPORTED_EXTENSIONS:
                 return load_tensor(input_path)
             
-        elif input_path.is_dir():
-            pass
+        elif input_path.is_dir(): # multiple-file mode
+            for filename in input_path.iterdir():
+                if filename.suffix in IMAGE_SUPPORTED_EXTENSIONS:
+                    return load_images_as_list(input_path)
+                elif filename.suffix in TENSOR_SUPPORTED_EXTENSIONS:
+                    return load_tensors_as_list(input_path)
+                else:
+                    raise TypeError("Error. Unsupported file type.")
         else:
             raise ValueError(f"Error. {input_path} unknown file-type.")
 
@@ -44,18 +50,22 @@ def load_image(input_path):
     return image
 
 
-def load_images_as_list(input_path)->list:
+def load_images_as_list(input_path:Path)->list:
     if not input_path.exists():
-        raise ValueError("Path doesn't exist")
+        raise ValueError(f"Path {input_path} doesn't exist")
     
     print("Loading images...")
     
     try:
-        image_list = [load_image(filename) for filename in input_path.iterdir() if filename.suffix in IMAGE_SUPPORTED_EXTENSIONS]
+        if not input_path.is_dir() and input_path.suffix in (".png"):
+            image_list = [load_image(input_path)]
+        elif input_path.is_dir():
+            image_list = [load_image(filename) for filename in input_path.iterdir() if filename.suffix in IMAGE_SUPPORTED_EXTENSIONS]
+        else:
+            raise RuntimeError(f"{input_path}: path or file not supported.")
     except Exception as err:
         print(err)
         return []
-    print("Loading completed.")
     return image_list
 
 # Load an entire tensors batch from "directory" (.npz or .npy files) and return a list of narrays
@@ -81,7 +91,7 @@ def load_tensors_as_list(input_directory, tensor_type=TensorType.TF_TENSOR):
         TensorContainer.convert(tensor, tensor_type)
     return tensors
 
-def load_tensor(input_path, name=None)->TensorContainer:
+def load_tensor(input_path, name=None):
     if input_path.is_dir():
         raise ValueError("Error. 'load_tensor' method can't load a tensor from a directory.")
 
@@ -91,8 +101,7 @@ def load_tensor(input_path, name=None)->TensorContainer:
 
     if suffix not in TENSOR_SUPPORTED_EXTENSIONS:
         raise ValueError(f"Extension {suffix} not suppported.")
-    
-    tensor = None
+
     try:
         with np.load(input_path) as data:
             if suffix == ".npy":
@@ -102,8 +111,7 @@ def load_tensor(input_path, name=None)->TensorContainer:
                     tensor = (TensorContainer(item, name, TensorType.NP_TENSOR))
             else:
                 raise ValueError("File extension not supported.")
+        return tensor
     except Exception as e:
         print(f"Error loading {name} file: {str(e)}.", "\nFile path: ", input_path)
-        return
-
-    return tensor
+        raise ValueError(f"Error loading {name} file: {str(e)}.") from e

@@ -115,10 +115,9 @@ def main(args):
             target_height)
     
     elif args.command == "filter":
-        if args.one_image:
-            preprocess.filter_image_dir(args.input_directory, args.output_directory)
-        else:
-            preprocess.filter_images(args.input_directory, args.output_directory)
+        input_path = Path(args.input_directory)
+        output_path = Path(args.output_directory)
+        preprocess.filter_images(input_path, output_path)
     
     elif args.command == "tensors":
         tensor_extraction.list_tensors(args.model)
@@ -235,13 +234,6 @@ def parse_args():
     filter_cmd = subparser.add_parser(
        "filter",
         help="filter an image using an high-pass filter"
-    )
-
-    filter_cmd.add_argument(
-       "-o", "--one_image",
-       required=False,
-       action='store_true',
-       help="Flag for filtering only an image"
     )
 
     # 'crop' subcommand.

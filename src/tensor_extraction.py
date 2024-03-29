@@ -10,12 +10,6 @@ from src import *
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "compression-master/models"))
 import tfci
 
-TENSOR_NAMES =  ["hyperprior/entropy_model/conditional_entropy_model_3/add:0"]
-MODEL_NAME = "hific-lo"
-
-RESIZED_DESTINATION = "/mnt/ssd-data/sibi/resized_images"
-
-# SEED
 random.seed(RANDOM_SEED)
 
 def list_tensors(model):
@@ -30,7 +24,7 @@ TENSORS_DICT = {
 }
 
 """
-LATENT SPACE EXTRACTON IMPLEMENTATION
+LATENT SPACES EXTRACTON IMPLEMENTATION
 """
 
 def dump_tensor_all(input_directory, output_directory, models, one_image=False):
@@ -86,9 +80,6 @@ def dump_from_file(input_path, output_path, model):
     
     tfci.dump_tensor(model, [tensor_name], input_path, output_filename)
 
-        
-
-
 def dump_tensor_images(input_directory, output_directory, model, tensor_name):
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)]
     n_images = len(image_filenames)
@@ -124,7 +115,7 @@ def compress_all(input_directory, output_directory, models, one_image=False):
                 output_path = os.path.join(output_directory, model_class, variant, model)
                 if not Path(output_path).exists():
                     Path(output_path).mkdir(parents=True, exist_ok=True)
-                print(f"MODEL CLASS: {model_class}\nMODEL: {model}\n\n")
+                print(f"\nMODEL CLASS: {model_class}\nMODEL: {model}")
                 if one_image:
                     output_path = os.path.join(output_path, Path(input_directory).stem + ".png")
                     input_image = tfci.read_png(input_directory)
@@ -132,7 +123,7 @@ def compress_all(input_directory, output_directory, models, one_image=False):
                     tfci.write_png(output_path, compressed_image)
                 else:
                     compress_images(model, input_directory, output_path)
-        print(f"PROCESS {(i+1)/ len(models)* 100}% COMPETED.\n")
+        print(f" PROCESS {(i+1)/ len(models)* 100}% COMPLETE.\n")
     pass
 
 def compress(model, input_image, rd_parameter=None):
@@ -154,7 +145,7 @@ def compress_images(model, input_directory, output_directory, rd_parameter=None,
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)] # es. [image1.png, image2.png, image3.png]
     n_images = len(image_filenames)
     
-    print(f"{n_images} founded. Start compressing in images...")
+    print(f"{n_images} founded. Start compressing images...")
     
     for i, image_filename in enumerate(image_filenames):
         output_file = os.path.join(output_directory, Path(image_filename).stem + ".png")
@@ -167,6 +158,6 @@ def compress_images(model, input_directory, output_directory, rd_parameter=None,
         sys.stdout.write(f"\r{i+1}/{n_images}")
         sys.stdout.flush()
         
-    sys.stdout.write(f"\rCompression completed. {n_images} compressed.")
+    sys.stdout.write(f"\rCompression completed. {n_images} compressed.\n\n")
     sys.stdout.flush()
     

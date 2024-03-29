@@ -1,4 +1,3 @@
-from multiprocessing import Value
 import os
 import random
 import cv2
@@ -9,8 +8,6 @@ from pathlib import Path
 
 from src import *
 from src import loader
-
-import matplotlib.pyplot as plt
 
 
 HIGH_PASS_KERNEL = np.array([
@@ -56,32 +53,64 @@ def crop_all(input_directory, output_directory, target_width, target_height, for
     print("Cropping completed.")
 
 def highpass(image_array, kernel=HIGH_PASS_KERNEL):
+    """
+    Applies a high-pass filter to an image array using the specified kernel.
+
+    Args:
+        image_array (array-like): The input image array to filter.
+        kernel (array-like, optional): The kernel to use for the high-pass filter. Defaults to HIGH_PASS_KERNEL.
+
+    Returns:
+        array-like: The filtered image array.
+    """
     kernel = kernel / (np.sum(kernel) if np.sum(kernel) != 0 else 1)
     image_flt = cv2.filter2D(image_array, -1, kernel)
 
     return image_flt
 
-def filter_image_dir(input_filename, output_directory=None):
-    image = Image.open(input_filename)
-    filename = Path(image.filename).stem or "unknown"
-    image_flt = highpass(image) # Is an array-like
-    if output_directory:
-        cv2.imwrite((os.path.join(output_directory, f"{filename}.png")), image_flt)
-    return Image.fromarray(image_flt)
+# def filter_image(input_filename, output_directory=None):
+#     """
+#     Filters an image and saves the filtered image to an output directory if provided.
 
-def filter_images(input_directory, output_directory):
+#     Args:
+#         input_filename (str): The path to the input image file.
+#         output_directory (str, optional): The directory to save the filtered image. Defaults to None.
+
+#     Returns:
+#         Image: The filtered image as an Image object.
+#     """
+#     image = Image.open(input_filename)
+#     filename = Path(image.filename).stem or "unknown"
+#     image_flt = highpass(image) # Is an array-like
+#     if output_directory:
+#         cv2.imwrite((os.path.join(output_directory, f"{filename}.png")), image_flt)
+#     return Image.fromarray(image_flt)
+
+def filter_images(input_directory:Path, output_directory:Path):
+    """
+    Filters a list of images from the input directory and saves the filtered images to the output directory.
+
+    Args:
+        input_directory (Path obj): The directory containing the input images.
+        output_directory (Path obj): The directory to save the filtered images.
+
+    Returns:
+        list: A list of filtered images as Image objects.
+    """
     image_list = loader.load_images_as_list(input_directory)
 
     print(f"Filtering {len(image_list)} images...")
     filtered_images = []
     for i, image in enumerate(image_list):
+        print(image)
         filename = Path(image.filename).stem or "unknown"
+        image = np.array(image)
         image_flt = highpass(image) # An array-like
         filtered_images.append(Image.fromarray(image_flt))
         cv2.imwrite((os.path.join(output_directory, f"{filename}.png")), image_flt)
         print(f"{filename}.png {i+1}/{len(image_list)}")
     print("Filtering completed.")
-    return filter_images
+    return filtered_images
 
 def noise_residual(image, filter_fnc):
     if not isinstance(image, (list, np.ndarray, pd.Series)):
@@ -110,7 +139,6 @@ def esitmated_fingerprint(input_directory):
     """
     image_list = loader.load_images_as_list(input_directory)
     N = len(image_list)
-    fft_spectrum_sum
     sum = np.zeros(np.array(image_list[0]).shape)
     for image in image_list:
         noise_res = noise_residual(image, highpass)
@@ -187,8 +215,9 @@ def average_fft(input_path):
             image = loader.load_image(filename)
         elif filename.suffix in TENSOR_SUPPORTED_EXTENSIONS:
             image = loader.load_tensor(filename)
-            image = image.tensor.squeeze()
-            image = image * 255.
+            image.squeeze()
+            image = image.get_tensor()
+            image = image * 255
             
         else:
             raise ValueError("Error. File extension not supported")

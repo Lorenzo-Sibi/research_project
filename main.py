@@ -245,7 +245,7 @@ def parse_args():
         "size",
         nargs=2,
         type=int,
-        help="Target size in the form (target_width, target_height)"
+        help="Target size in the form <TARGET_WIDTH TARGET_HEIGHT> (no comas, brackets or quotes)"
     )
     
 

@@ -36,7 +36,8 @@ def crop_center(image, target_width, target_height):
     return image.crop((left, top, rigth, bottom))
 
 def crop_all(input_directory, output_directory, target_width, target_height, format="png"):
-    if not os.path.exists(input_directory):
+    input_directory = Path(input_directory)
+    if not input_directory.exists():
         print("Input directory doesn't exist!")
         return
     try:

@@ -112,7 +112,9 @@ def main(args):
             args.input_directory, 
             args.output_directory, 
             target_width, 
-            target_height)
+            target_height, 
+            check_size=args.check_size
+        )
     
     elif args.command == "filter":
         input_path = Path(args.input_directory)
@@ -246,6 +248,12 @@ def parse_args():
         nargs=2,
         type=int,
         help="Target size in the form <TARGET_WIDTH TARGET_HEIGHT> (no comas, brackets or quotes)"
+    )
+    
+    crop_cmd.add_argument(
+        "--check_size",
+        type=bool,
+        default=False
     )
     
 

@@ -35,7 +35,7 @@ def crop_center(image, target_width, target_height):
     
     return image.crop((left, top, rigth, bottom))
 
-def crop_all(input_directory, output_directory, target_width, target_height, format="png"):
+def crop_all(input_directory, output_directory, target_width, target_height, check_size=False,format="png"):
     input_directory = Path(input_directory)
     if not input_directory.exists():
         print("Input directory doesn't exist!")
@@ -43,9 +43,13 @@ def crop_all(input_directory, output_directory, target_width, target_height, for
     try:
         image_list = loader.load_images_as_list(input_directory)
         
-        check_sizes(image_list, target_width, target_height)
+        if check_size:
+            check_sizes(image_list, target_width, target_height)
         print("cropping...")
         for image in image_list:
+            h, w, _ = image.shape
+            if w < target_width or  h < target_height:
+                continue
             filename = Path(image.filename).stem or "unknown"
             image = crop_center(image, target_width, target_height)
             image.save(os.path.join(output_directory, f"{filename}.{format}"), format=format)

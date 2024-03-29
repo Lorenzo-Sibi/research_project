@@ -42,12 +42,13 @@ def crop_all(input_directory, output_directory, target_width, target_height, che
         return
     try:
         image_list = loader.load_images_as_list(input_directory)
-        
+        print(f"Total images loaded: {len(image_list)}")
         if check_size:
             check_sizes(image_list, target_width, target_height)
         print("cropping...")
         for image in image_list:
-            h, w, _ = image.shape
+            print(image)
+            w, h = image.size
             if w < target_width or  h < target_height:
                 continue
             filename = Path(image.filename).stem or "unknown"

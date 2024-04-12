@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from src import preprocess
 from src import tensor_extraction
+from src.utils import tensors_log
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "compression-master/models"))
 import tfci
@@ -36,6 +37,33 @@ MODELS_DICT = {
     #     "cc8": [f"ms2020-cc8-msssim-{i}" for i in range(1, 10)]
     # },
 }
+
+MODELS_DICT_MOMENTANEO = {
+    "hific": {
+        "variants": ["hific-lo", "hific-hi"],
+    },
+    "bmshj2018": {
+        "factorized-mse": ["bmshj2018-factorized-mse-2", "bmshj2018-factorized-mse-8"],
+        "factorized-msssim": ["bmshj2018-factorized-msssim-2", "bmshj2018-factorized-msssim-8"],
+        "hyperprior-mse": ["bmshj2018-hyperprior-mse-2", "bmshj2018-hyperprior-mse-8"],
+        "hyperprior-msssim": ["bmshj2018-hyperprior-msssim-2", "bmshj2018-hyperprior-msssim-8"]
+    },
+    "b2018": {
+        "leaky_relu-128": ["b2018-leaky_relu-128-2", "b2018-leaky_relu-128-4"],
+        "leaky_relu-192": ["b2018-leaky_relu-192-2", "b2018-leaky_relu-192-4"],
+        "gdn-128": ["b2018-gdn-128-2", "b2018-gdn-128-4"],
+        "gdn-192": ["b2018-gdn-192-2", "b2018-gdn-192-4"]
+    },
+    "mbt2018": {
+        "mean": ["mbt2018-mean-mse-2", "mbt2018-mean-mse-8"],
+        "mean-msssim": ["mbt2018-mean-msssim-2", "mbt2018-mean-msssim-8"]
+    },
+    # "ms2020": {
+    #     "cc10": [f"ms2020-cc10-mse-{i}" for i in range(1, 11)],
+    #     "cc8": [f"ms2020-cc8-msssim-{i}" for i in range(1, 10)]
+    # },
+}
+
 TENSORS_DICT = {
     "hific-lo": "hyperprior/entropy_model/conditional_entropy_model_3/add:0",
     "hific-hi": "hyperprior/entropy_model/conditional_entropy_model_3/add:0",
@@ -47,47 +75,13 @@ TENSORS_DICT = {
     #"ms2020": "analysis/layer_2/convolution:0",
 }
 
-def list_tensors(model):
-  """Lists all internal tensors of a given model."""
-  def get_names_dtypes_shapes(function):
-    for op in function.graph.get_operations():
-      for tensor in op.outputs:
-        yield tensor.name, tensor.dtype.name, tensor.shape
-
-  sender = tfci.instantiate_model_signature(model, "sender")
-  tensors = sorted(get_names_dtypes_shapes(sender))
-  log = "Sender-side tensors:\n"
-  for name, dtype, shape in tensors:
-    log += f"{name} (dtype={dtype}, shape={shape})\n"
-  log += "\n"
-
-  receiver = tfci.instantiate_model_signature(model, "receiver")
-  tensors = sorted(get_names_dtypes_shapes(receiver))
-  log += "Receiver-side tensors:\n"
-  for name, dtype, shape in tensors:
-    log += f"{name} (dtype={dtype}, shape={shape})\n"
-  return log
-
-def tensors_log(logdir='tensors_logs'):
-    for i, model_class in enumerate(MODELS_DICT):
-        for variant in MODELS_DICT[model_class]:
-            for model in MODELS_DICT[model_class][variant]:
-                path = os.path.join(logdir, model_class, variant)
-                filename = os.path.join(path, model + "_tensors" + ".txt")
-                if not os.path.exists(path):
-                    os.makedirs(path)
-                with open(filename, "w") as f:
-                   f.write(list_tensors(model))
-        print(f"{i}/{len(MODELS_DICT)}")
-                
-
 def main(args):
     
     if args.command == "compress-all":
         tensor_extraction.compress_all(
             args.input_directory,
             args.output_directory,
-            MODELS_DICT,
+            MODELS_DICT_MOMENTANEO,
             one_image=args.image
         )
 
@@ -132,7 +126,7 @@ def main(args):
         tensor_extraction.dump_tensor_all(
             args.input_directory,
             args.output_directory,
-            MODELS_DICT,
+            MODELS_DICT_MOMENTANEO,
             one_image
         )
 

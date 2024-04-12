@@ -1,4 +1,5 @@
 import os
+import sys
 import random
 from PIL import Image
 import enum
@@ -7,6 +8,10 @@ from pathlib import Path
 import tensorflow as tf
 import numpy as np
 import pandas as pd
+
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "compression-master/models"))
+import tfci
 
 random.seed(RANDOM_SEED)
 
@@ -77,7 +82,7 @@ class TensorContainer:
         self.__tensor_type = TensorType.NP_TENSOR
         self.__dtype = self.__tensor.dtype
         self.__shape = self.__tensor.shape
-        self.__tensor = self.__tensor.numpy()
+        self.__tensor = self.__tensor.numpy() # type: ignore
         
     def tf_tensor(self):
         if self.__tensor_type == TensorType.TF_TENSOR:
@@ -129,6 +134,40 @@ def create_image_dataframe(image_folder, label):
     df = pd.DataFrame(image_data)
     
     return df
+
+def list_tensors(model):
+  """Lists all internal tensors of a given model."""
+  def get_names_dtypes_shapes(function):
+    for op in function.graph.get_operations():
+      for tensor in op.outputs:
+        yield tensor.name, tensor.dtype.name, tensor.shape
+
+  sender = tfci.instantiate_model_signature(model, "sender")
+  tensors = sorted(get_names_dtypes_shapes(sender))
+  log = "Sender-side tensors:\n"
+  for name, dtype, shape in tensors:
+    log += f"{name} (dtype={dtype}, shape={shape})\n"
+  log += "\n"
+
+  receiver = tfci.instantiate_model_signature(model, "receiver")
+  tensors = sorted(get_names_dtypes_shapes(receiver))
+  log += "Receiver-side tensors:\n"
+  for name, dtype, shape in tensors:
+    log += f"{name} (dtype={dtype}, shape={shape})\n"
+  return log    
+
+
+def tensors_log(logdir='tensors_logs'):
+    for i, model_class in enumerate(MODELS_DICT):
+        for variant in MODELS_DICT[model_class]:
+            for model in MODELS_DICT[model_class][variant]:
+                path = os.path.join(logdir, model_class, variant)
+                filename = os.path.join(path, model + "_tensors" + ".txt")
+                if not os.path.exists(path):
+                    os.makedirs(path)
+                with open(filename, "w") as f:
+                   f.write(list_tensors(model))
+        print(f"{i}/{len(MODELS_DICT)}")
 
 def tensors_subtraction(tensor1, tensor2, normalize=True):
     if isinstance(tensor1, TensorContainer) or isinstance(tensor2, TensorContainer):

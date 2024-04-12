@@ -46,8 +46,8 @@ def crop_all(input_directory, output_directory, target_width, target_height, che
         if check_size:
             check_sizes(image_list, target_width, target_height)
         print("cropping...")
-        for image in image_list:
-            print(image)
+        for i, image in enumerate(image_list):
+            print(f"{i + 1}/{len(image_list)}")
             w, h = image.size
             if w < target_width or  h < target_height:
                 continue

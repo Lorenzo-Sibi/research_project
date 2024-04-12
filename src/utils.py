@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "compression-master/models"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "compression-master/models"))
 import tfci
 
 random.seed(RANDOM_SEED)

@@ -60,7 +60,7 @@ def dump_from_dir(input_directory, output_directory, model):
         raise ValueError(f"Error. {output_directory} is not a directory.")
 
     for filename in input_directory.iterdir():
-        print(filename)
+        print("FILENAME: ", filename)
         if not filename.is_file() or (filename.is_file() and filename.suffix not in (".png")):
             continue
         dump_from_file(filename, output_directory, model)
@@ -75,11 +75,10 @@ def dump_from_file(input_path, output_path, model):
         raise ValueError(f"Error. {output_path} is not a directory.")
     
     output_filename = Path(output_path, input_path.stem, ".npz")
-    print(MODELS_LATENTS_DICT)
     print(MODELS_LATENTS_DICT[model])
     tensor_name = MODELS_LATENTS_DICT[model]
     
-    tfci.dump_tensor(model, [tensor_name], input_path, output_filename)
+    tfci.dump_tensor(model, [tensor_name], str(input_path), str(output_filename))
 
 def dump_tensor_images(input_directory, output_directory, model, tensor_name):
     image_filenames = [image_filename for image_filename in os.listdir(input_directory)]

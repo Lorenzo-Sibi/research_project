@@ -39,7 +39,7 @@ def dump_tensor_all(input_directory, output_directory, models, one_image=False):
                 if one_image:
                     dump_tensor(input_directory, output_path, model, tensor_name)
                 else:
-                    dump_from_dir(Path(input_directory, model_class, variant, model), output_path, model)
+                    dump_from_dir(Path(input_directory, model_class, variant, model), output_path, model_class)
                 print("\n\n")
         print(f"TOTAL PROCESS {(i+1)/ len(models)* 100}% COMPETED.\n\n")
 

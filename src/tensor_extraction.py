@@ -74,8 +74,9 @@ def dump_from_file(input_path, output_path, model):
     if not output_path.is_dir():
         raise ValueError(f"Error. {output_path} is not a directory.")
     
-    output_filename = Path(output_path, input_path.stem, ".npz")
+    output_filename = Path(output_path, f"{input_path.stem}.npz")
     print(MODELS_LATENTS_DICT[model])
+    print("OUTOU PATH: ", output_path)
     tensor_name = MODELS_LATENTS_DICT[model]
     
     tfci.dump_tensor(model, [tensor_name], str(input_path), str(output_filename))

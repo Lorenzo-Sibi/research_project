@@ -7,6 +7,8 @@ from src import preprocess
 from src import tensor_extraction
 from src.utils import tensors_log
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0 = info, 1 = warning, 2 = error, 3 = fatal
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "compression-master/models"))
 import tfci
 from src import MODELS_LATENTS_DICT
@@ -58,10 +60,6 @@ MODELS_DICT_MOMENTANEO = {
         "mean": ["mbt2018-mean-mse-2", "mbt2018-mean-mse-8"],
         "mean-msssim": ["mbt2018-mean-msssim-2", "mbt2018-mean-msssim-8"]
     },
-    # "ms2020": {
-    #     "cc10": [f"ms2020-cc10-mse-{i}" for i in range(1, 11)],
-    #     "cc8": [f"ms2020-cc8-msssim-{i}" for i in range(1, 10)]
-    # },
 }
 
 TENSORS_DICT = {
@@ -82,23 +80,15 @@ def main(args):
             args.input_directory,
             args.output_directory,
             MODELS_DICT_MOMENTANEO,
-            one_image=args.image
         )
 
     elif args.command == "compress":
-        if args.one_image:
-            tensor_extraction.compress(
-                args.model,
-                args.input_directory, 
-                args.rd_parameter
-            )
-        else:
-            tensor_extraction.compress_images(
-                args.model, 
-                args.input_directory,
-                args.output_directory, 
-                args.rd_parameter
-            )
+        tensor_extraction.compress_images(
+            args.model, 
+            args.input_directory,
+            args.output_directory, 
+            args.rd_parameter
+        )
     
     elif args.command == "crop":
         target_width, target_height = args.size
@@ -122,12 +112,10 @@ def main(args):
         tensors_log()
 
     elif args.command == "dump-all":
-        one_image = args.image
         tensor_extraction.dump_tensor_all(
             args.input_directory,
             args.output_directory,
-            MODELS_DICT_MOMENTANEO,
-            one_image
+            MODELS_DICT_MOMENTANEO
         )
 
     elif args.command == "dump":
@@ -150,12 +138,6 @@ def parse_args():
         description="Compress all the images in 'input_directory' (or just one if -i flag is active) for all models available"
     )
 
-    compress_all_cmd.add_argument(
-        "-i", "--image",
-        action="store_true",
-        help="If active compress a single image with all models."
-    )
-
     # 'compress' subcomand
     compress_cmd = subparser.add_parser(
         "compress",
@@ -174,7 +156,6 @@ def parse_args():
     )
 
     compress_cmd.add_argument(
-        "-o", "--one_image",
         required=False,
         action='store_true',
         help="Flag for compressing only an image"
@@ -185,22 +166,11 @@ def parse_args():
         "dump-all",
     )
 
-    dump_all_cmd.add_argument(
-        "-i", "--image",
-        action="store_true",
-        help="If active dumps a single image tensors for all models."
-    )
-
 
     # 'dump' subcomand
     dump_cmd = subparser.add_parser(
         "dump",
-        description="dump the latent space tensor given an input image or a directory for a specific model and tensor. If --image flag is enabled, only the given image will be dumped"
-    )
-    dump_cmd.add_argument(
-        "-i", "--image",
-        action="store_true",
-        help="If active dumps a single image tensors"
+        description="dump the latent space tensor given an input image or a directory for a specific model and tensor."
     )
 
     dump_cmd.add_argument(

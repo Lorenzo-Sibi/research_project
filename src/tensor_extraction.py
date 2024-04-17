@@ -75,6 +75,7 @@ def dump_from_file(input_path, output_path, model):
         raise ValueError(f"Error. {output_path} is not a directory.")
     
     output_filename = Path(output_path, input_path.stem, ".npz")
+    print(MODELS_LATENTS_DICT)
     print(MODELS_LATENTS_DICT[model])
     tensor_name = MODELS_LATENTS_DICT[model]
     

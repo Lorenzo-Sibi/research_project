@@ -39,7 +39,7 @@ def dump_tensor_all(input_directory, output_directory, models, one_image=False):
                 if one_image:
                     dump_tensor(input_directory, output_path, model, tensor_name)
                 else:
-                    dump_tensor_images(input_directory, output_path, model, tensor_name)
+                    dump_from_dir(Path(input_directory, model_class, variant, model), output_path, model)
                 print("\n\n")
         print(f"TOTAL PROCESS {(i+1)/ len(models)* 100}% COMPETED.\n\n")
 
@@ -75,8 +75,8 @@ def dump_from_file(input_path, output_path, model):
         raise ValueError(f"Error. {output_path} is not a directory.")
     
     output_filename = Path(output_path, input_path.stem, ".npz")
-    print(MODELS_LATENTS_DICT[model])
-    tensor_name = MODELS_LATENTS_DICT[model]
+    print(TENSORS_DICT[model])
+    tensor_name = TENSORS_DICT[model]
     
     tfci.dump_tensor(model, [tensor_name], input_path, output_filename)
 

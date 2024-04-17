@@ -76,7 +76,7 @@ def dump_from_file(input_path, output_path, model):
     
     output_filename = Path(output_path, f"{input_path.stem}.npz")
     print(MODELS_LATENTS_DICT[model])
-    print("OUTOU PATH: ", output_path)
+    print("OUTOU PATH: ", output_filename)
     tensor_name = MODELS_LATENTS_DICT[model]
     
     tfci.dump_tensor(model, [tensor_name], str(input_path), str(output_filename))

@@ -155,12 +155,6 @@ def parse_args():
         help="Rate-distortion parameter (for some models). Ignored if 'target_bpp' is set."
     )
 
-    compress_cmd.add_argument(
-        required=False,
-        action='store_true',
-        help="Flag for compressing only an image"
-    )
-
     # 'dump-all' subcommand.
     dump_all_cmd = subparser.add_parser(
         "dump-all",
